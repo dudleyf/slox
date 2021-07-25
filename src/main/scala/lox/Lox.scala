@@ -4,7 +4,7 @@ import java.nio.charset.StandardCharsets.UTF_8
 import java.nio.file.{Files, Path}
 import scala.io.StdIn.readLine
 
-class Lox {
+class Lox:
   import Lox._
 
   def runFile(path: String) =
@@ -21,14 +21,12 @@ class Lox {
     }
 
   def run(source: String) =
-    val scanner = new Scanner(source)
+    val scanner = Scanner(source)
     val tokens = scanner.scanTokens()
-    for (token <- tokens) {
-      println(token)
-    }
-}
+    for token <- tokens do println(token)
 
-object Lox {
+
+object Lox:
   var hadError = false;
 
   def error(line: Int, message: String) =
@@ -37,4 +35,3 @@ object Lox {
   private def report(line: Int, where: String, message: String) =
     System.err.println(s"[line ${line}] Error${where}: ${message}")
   hadError = true
-}
