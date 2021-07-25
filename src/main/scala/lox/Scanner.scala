@@ -43,7 +43,7 @@ enum TokenType:
   WHILE,
   EOF
 
-class Token(val tokType: TokenType,
+case class Token(val tokType: TokenType,
             val lexeme: String,
             val literal: Any,
             val line: Int):
