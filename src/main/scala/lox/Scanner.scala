@@ -1,11 +1,57 @@
 package lox
 
-import lox.TokenType._
-
 import scala.collection.mutable.ArrayBuffer
 
+enum TokenType:
+  case LEFT_PAREN,
+  RIGHT_PAREN,
+  LEFT_BRACE,
+  RIGHT_BRACE,
+  COMMA,
+  DOT,
+  MINUS,
+  PLUS,
+  SEMICOLON,
+  SLASH,
+  STAR,
+  BANG,
+  BANG_EQUAL,
+  EQUAL,
+  EQUAL_EQUAL,
+  GREATER,
+  GREATER_EQUAL,
+  LESS,
+  LESS_EQUAL,
+  IDENTIFIER,
+  STRING,
+  NUMBER,
+  AND,
+  CLASS,
+  ELSE,
+  FALSE,
+  FUN,
+  FOR,
+  IF,
+  NIL,
+  OR,
+  PRINT,
+  RETURN,
+  SUPER,
+  THIS,
+  TRUE,
+  VAR,
+  WHILE,
+  EOF
+
+class Token(val tokType: TokenType,
+            val lexeme: String,
+            val literal: Any,
+            val line: Int):
+  override def toString: String = s"${tokType} ${lexeme} ${literal}"
+
 class Scanner(val source: String,
-              val tokens: ArrayBuffer[Token] = ArrayBuffer[Token]()) {
+              val tokens: ArrayBuffer[Token] = ArrayBuffer[Token]()):
+  import TokenType.*
 
   private val keywords = Map(
     "and" -> AND,
@@ -129,4 +175,3 @@ class Scanner(val source: String,
     case c if isDigit(c) => number()
     case c if isAlpha(c) => identifier()
     case _ => Lox.error(line, "Unexpected character.")
-}

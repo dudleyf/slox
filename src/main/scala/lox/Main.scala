@@ -15,4 +15,3 @@ def main(args: Array[String]): Unit =
 
   val lox = Lox()
   if (args.length == 1) then lox.runFile(args(0)) else lox.runPrompt()
-
