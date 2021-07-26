@@ -20,10 +20,14 @@ class Lox:
       hadError = false
     }
 
-  def run(source: String) =
+  def run(source: String): Unit =
     val scanner = Scanner(source)
     val tokens = scanner.scanTokens()
-    for token <- tokens do println(token)
+    val parser = Parser(tokens)
+    val expr = parser.parse()
+    if hadError then return
+    println(AstPrinter.print(expr))
+
 
 
 object Lox:
@@ -32,6 +36,13 @@ object Lox:
   def error(line: Int, message: String) =
     report(line, "", message)
 
+  def error(token: Token, message: String) =
+    if (token.tokType == TokenType.EOF) {
+      report(token.line, " at end", message)
+    } else {
+      report(token.line, " at '" + token.lexeme + "'", message)
+    }
+
   private def report(line: Int, where: String, message: String) =
     System.err.println(s"[line ${line}] Error${where}: ${message}")
-  hadError = true
+    hadError = true

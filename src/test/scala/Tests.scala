@@ -1,12 +1,28 @@
 import jdk.incubator.vector.VectorOperators.Test
-import lox.{Binary, Grouping, Literal, Token, TokenType, Unary, AstPrinter}
+import lox.{AstPrinter, Binary, Expr, Grouping, Literal, Parser, Scanner, Token, TokenType, Unary}
+import org.scalatest.*
+import flatspec.*
+import matchers.*
 import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.funsuite.AnyFunSuite
 
-class ScannerTests extends AnyFunSpec:
+class ParserTests extends AnyFlatSpec with should.Matchers:
+  def parse(source: String): Expr =
+    val scanner = Scanner(source)
+    val tokens =  scanner.scanTokens()
+    val parser = Parser(tokens)
+    parser.parse()
+
+  it should "parse a simple expression" in {
+    val expr = parse("1 + 2")
+    AstPrinter.print(expr) shouldEqual "(+ 1.0 2.0)"
+  }
+
+class Tests extends AnyFunSpec:
   import TokenType._
 
   def scan(source: String): List[Token] =
-    val scanner = lox.Scanner(source)
+    val scanner = Scanner(source)
     scanner.scanTokens()
 
   describe("Scanner") {
@@ -33,7 +49,6 @@ class ScannerTests extends AnyFunSpec:
         Grouping(
           Literal(45.67))
       )
-      var printer = AstPrinter()
-      assert(printer.print(expression) == "(* (- 123) (group 45.67))")
+      assert(AstPrinter.print(expression) == "(* (- 123) (group 45.67))")
     }
   }
