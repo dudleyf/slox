@@ -13,5 +13,4 @@ def main(args: Array[String]): Unit =
     System.exit(64);
   }
 
-  val lox = Lox()
-  if (args.length == 1) then lox.runFile(args(0)) else lox.runPrompt()
+  if (args.length == 1) then Lox.runFile(args(0)) else Lox.runPrompt()
