@@ -1,4 +1,3 @@
-import jdk.incubator.vector.VectorOperators.Test
 import lox.*
 import org.scalatest.*
 import org.scalatest.flatspec.*
