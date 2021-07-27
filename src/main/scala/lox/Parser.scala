@@ -69,7 +69,7 @@ class Parser(val tokens: List[Token]):
     tokens(current)
 
   private def isAtEnd(): Boolean =
-    peek().tokType == EOF
+    peek().tokenType == EOF
 
   private def advance(): Unit =
     if !isAtEnd() then current += 1
@@ -79,7 +79,7 @@ class Parser(val tokens: List[Token]):
     tokens(current - 1)
 
   private def check(tpe: TokenType): Boolean =
-    if isAtEnd() then false else peek().tokType == tpe
+    if isAtEnd() then false else peek().tokenType == tpe
 
   private def matchTokens(tokenTypes: TokenType*): Boolean =
     for (tpe <- tokenTypes) {
@@ -105,8 +105,8 @@ class Parser(val tokens: List[Token]):
   private def synchronize(): Unit =
     advance()
     while (!isAtEnd())
-      if previous().tokType == SEMICOLON then return
-      peek().tokType match {
+      if previous().tokenType == SEMICOLON then return
+      peek().tokenType match {
         case CLASS | FUN | VAR | FOR | IF | WHILE | PRINT | RETURN => return
         case _ => advance()
       }

@@ -5,17 +5,27 @@ import java.nio.file.{Files, Path}
 import scala.io.StdIn.readLine
 
 object Lox {
-  var hadError = false;
+  val ERROR_EXIT = 65
+  val RUNTIME_ERROR_EXIT = 70
+
+  var hadError = false
+  var hadRuntimeError = false
+
+  val interpreter = Interpreter()
 
   def error(line: Int, message: String) =
     report(line, "", message)
 
   def error(token: Token, message: String) =
-    if (token.tokType == TokenType.EOF) {
+    if (token.tokenType == TokenType.EOF) {
       report(token.line, " at end", message)
     } else {
       report(token.line, " at '" + token.lexeme + "'", message)
     }
+
+  def runtimeError(error: RuntimeError): Unit =
+    System.err.println(error.getMessage + "\n[line " + error.token.line + "]")
+    hadRuntimeError = true
 
   private def report(line: Int, where: String, message: String) =
     System.err.println(s"[line ${line}] Error${where}: ${message}")
@@ -24,7 +34,8 @@ object Lox {
   def runFile(path: String) =
     var source = Files.readString(Path.of(path), UTF_8)
     run(source)
-    if hadError then System.exit(65)
+    if hadError then System.exit(ERROR_EXIT)
+    if hadRuntimeError then System.exit(RUNTIME_ERROR_EXIT)
 
   def runPrompt() =
     var line = ""
@@ -39,6 +50,5 @@ object Lox {
     val tokens = scanner.scanTokens()
     val parser = Parser(tokens)
     val expr = parser.parse()
-    if hadError then return
-      println(AstPrinter.print(expr))
+    if hadError then () else interpreter.interpret(expr)
 }

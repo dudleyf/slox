@@ -5,27 +5,35 @@ import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.*
 
-abstract class Tests extends AnyFlatSpec with should.Matchers
-
-class ParserTests extends Tests :
-  def parse(source: String): Expr =
+object TestLox {
+  def scan(source: String): List[Token] =
     val scanner = Scanner(source)
-    val tokens = scanner.scanTokens()
+    scanner.scanTokens()
+
+  def parse(source: String): Expr =
+    val tokens = scan(source)
     val parser = Parser(tokens)
     parser.parse()
 
+  def eval(source: String): String =
+    val expr = parse(source)
+    val interpreter = Interpreter()
+    val result = interpreter.evaluate(expr)
+    interpreter.stringify(result)
+}
+
+import TestLox._
+
+abstract class Tests extends AnyFlatSpec with should.Matchers
+
+class ParserTests extends Tests :
   "A parser" should "parse a simple expression" in {
     val expr = parse("1 + 2")
     AstPrinter.print(expr) shouldEqual "(+ 1.0 2.0)"
   }
 
 class ScannerTests extends Tests :
-
   import TokenType.*
-
-  def scan(source: String): List[Token] =
-    val scanner = Scanner(source)
-    scanner.scanTokens()
 
   "A scanner" should "scan a string of valid tokens" in {
     val tokens = scan("{}!")
@@ -52,3 +60,7 @@ class AstPrinterTests extends Tests :
     AstPrinter.print(expression) shouldEqual "(* (- 123) (group 45.67))"
   }
 
+class InterpreterTests extends Tests:
+  "an Interpreter" should "evaluate a simple arithmetic expression" in {
+    eval("1+2") shouldEqual("3")
+  }

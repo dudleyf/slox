@@ -43,11 +43,11 @@ enum TokenType:
   WHILE,
   EOF
 
-case class Token(val tokType: TokenType,
-            val lexeme: String,
-            val literal: Any,
-            val line: Int):
-  override def toString: String = s"${tokType} ${lexeme} ${literal}"
+case class Token(val tokenType: TokenType,
+                 val lexeme: String,
+                 val literal: Any,
+                 val line: Int):
+  override def toString: String = s"${tokenType} ${lexeme} ${literal}"
 
 class Scanner(val source: String,
               val tokens: ArrayBuffer[Token] = ArrayBuffer[Token]()):
