@@ -10,3 +10,8 @@ project/plugins/project/
 .cache
 .lib/
 .bsp
+.metals/
+.bloop/
+.vscode/
+project/metals.sbt
+project/project
