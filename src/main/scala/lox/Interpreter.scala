@@ -2,12 +2,9 @@ package lox
 
 class RuntimeError(val token: Token, msg: String) extends Exception(msg)
 
-class Interpreter extends Visitor[Any] {
+class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit] {
 
   import TokenType.*
-
-  def evaluate(expr: Expr): Any =
-    expr.accept(this)
 
   def isTruthy(obj: Any): Boolean = obj match {
     case null => false
@@ -36,10 +33,17 @@ class Interpreter extends Visitor[Any] {
     case _ => throw new RuntimeError(operator, "Operands must be numbers")
   }
 
-  def interpret(expression: Expr): Unit =
+  def evaluate(expr: Expr): Any =
+    expr.accept(this)
+
+  def execute(stmt: Stmt): Unit =
+    stmt.accept(this)
+
+  def interpret(stmts: List[Stmt]): Unit =
     try {
-      val value = evaluate(expression)
-      println(stringify(value))
+      for (stmt <- stmts) {
+        execute(stmt)
+      }
     } catch {
       case e: RuntimeError => Lox.runtimeError(e)
     }
@@ -56,7 +60,14 @@ class Interpreter extends Visitor[Any] {
     case _ => obj.toString()
   }
 
-  override def visit(expr: Binary): Any =
+  override def visit(stmt: PrintStmt): Unit =
+    val value = evaluate(stmt.expression)
+    print(stringify(value))
+
+  override def visit(stmt: ExpressionStmt): Unit =
+    evaluate(stmt.expression)
+
+  override def visit(expr: BinaryExpr): Any =
     val left = evaluate(expr.left)
     val right = evaluate(expr.right)
 
@@ -99,13 +110,13 @@ class Interpreter extends Visitor[Any] {
       case _ => null
     }
 
-  override def visit(expr: Grouping): Any =
+  override def visit(expr: GroupingExpr): Any =
     evaluate(expr.expression)
 
-  override def visit(expr: Literal): Any =
+  override def visit(expr: LiteralExpr): Any =
     expr.value
 
-  override def visit(expr: Unary): Any =
+  override def visit(expr: UnaryExpr): Any =
     val right = evaluate(expr.right)
     expr.operator.tokenType match {
       case MINUS => {
