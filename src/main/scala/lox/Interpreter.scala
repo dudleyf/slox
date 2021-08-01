@@ -3,8 +3,9 @@ package lox
 class RuntimeError(val token: Token, msg: String) extends Exception(msg)
 
 class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit] {
-
   import TokenType.*
+
+  private var environment = Environment()
 
   def isTruthy(obj: Any): Boolean = obj match {
     case null => false
@@ -118,14 +119,21 @@ class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit] {
 
   override def visit(expr: UnaryExpr): Any =
     val right = evaluate(expr.right)
-    expr.operator.tokenType match {
-      case MINUS => {
+    expr.operator.tokenType match
+      case MINUS =>
         checkNumberOperand(expr.operator, right)
         -num(right)
-      }
       case BANG => !isTruthy(right)
       case _ => null
-    }
 
+  override def visit(expr: VariableExpr): Any =
+    environment.get(expr.name)
 
+  override def visit(stmt: VarStmt): Unit =
+    var value = if stmt.initializer != null then
+      evaluate(stmt.initializer)
+    else
+      null
+
+    environment.define(stmt.name.lexeme, value)
 }

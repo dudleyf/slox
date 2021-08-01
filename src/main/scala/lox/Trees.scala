@@ -8,6 +8,7 @@ trait ExprVisitor[T]:
   def visit(expr: GroupingExpr): T
   def visit(expr: LiteralExpr): T
   def visit(expr: UnaryExpr): T
+  def visit(expr: VariableExpr): T
 
 case class BinaryExpr(left: Expr, operator: Token, right: Expr) extends Expr:
   override def accept[T](visitor: ExprVisitor[T]): T = visitor.visit(this)
@@ -19,6 +20,9 @@ case class LiteralExpr(value: Any) extends Expr:
   override def accept[T](visitor: ExprVisitor[T]): T = visitor.visit(this);
 
 case class UnaryExpr(operator: Token, right: Expr) extends Expr:
+  override def accept[T](visitor: ExprVisitor[T]): T = visitor.visit(this)
+
+case class VariableExpr(name: Token) extends Expr:
   override def accept[T](visitor: ExprVisitor[T]): T = visitor.visit(this)
 
 
@@ -40,6 +44,10 @@ object TreePrinter extends ExprVisitor[String], StmtVisitor[String]:
 
   override def visit(stmt: ExpressionStmt): String =
     parenthesize("expr", stmt.expression)
+
+  override def visit(expr: VariableExpr): String = ???
+
+  override def visit(stmt: VarStmt): String = ???
 
   def print(expr: Expr): String = expr.accept(this)
 
@@ -63,9 +71,13 @@ sealed abstract class Stmt:
 trait StmtVisitor[R]:
   def visit(stmt: PrintStmt): R
   def visit(stmt: ExpressionStmt): R
+  def visit(stmt: VarStmt): R
 
 case class PrintStmt(expression: Expr) extends Stmt:
   override def accept[T](visitor: StmtVisitor[T]): T = visitor.visit(this)
 
 case class ExpressionStmt(expression: Expr) extends Stmt:
   override def accept[T](visitor: StmtVisitor[T]): T = visitor.visit(this)
+
+case class VarStmt(name: Token, initializer: Expr) extends Stmt:
+  override def accept[R](visitor: StmtVisitor[R]): R = visitor.visit(this)
