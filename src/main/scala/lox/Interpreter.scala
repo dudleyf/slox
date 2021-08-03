@@ -141,4 +141,16 @@ class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit] {
     val value = evaluate(expr.value)
     environment.assign(expr.name, value)
     value
+
+  override def visit(stmt: BlockStmt): Unit =
+    executeBlock(stmt.statements, Environment(environment))
+
+  def executeBlock(statements: List[Stmt], environment: Environment): Unit =
+    val previous = this.environment
+    try
+      this.environment = environment
+      statements.foreach(execute)
+    finally {
+      this.environment = previous
+    }
 }

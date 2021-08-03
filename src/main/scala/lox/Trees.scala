@@ -55,6 +55,8 @@ object TreePrinter extends ExprVisitor[String], StmtVisitor[String]:
 
   override def visit(expr: AssignExpr): String = ???
 
+  override def visit(stmt: BlockStmt): String = ???
+
   def print(expr: Expr): String = expr.accept(this)
 
   def print(stmt: Stmt): String = stmt.accept(this)
@@ -78,6 +80,7 @@ trait StmtVisitor[R]:
   def visit(stmt: PrintStmt): R
   def visit(stmt: ExpressionStmt): R
   def visit(stmt: VarStmt): R
+  def visit(stmt: BlockStmt): R
 
 case class PrintStmt(expression: Expr) extends Stmt:
   override def accept[T](visitor: StmtVisitor[T]): T = visitor.visit(this)
@@ -86,4 +89,7 @@ case class ExpressionStmt(expression: Expr) extends Stmt:
   override def accept[T](visitor: StmtVisitor[T]): T = visitor.visit(this)
 
 case class VarStmt(name: Token, initializer: Expr) extends Stmt:
+  override def accept[R](visitor: StmtVisitor[R]): R = visitor.visit(this)
+
+case class BlockStmt(statements: List[Stmt]) extends Stmt:
   override def accept[R](visitor: StmtVisitor[R]): R = visitor.visit(this)

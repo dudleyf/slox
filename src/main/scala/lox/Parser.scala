@@ -7,7 +7,8 @@ import scala.collection.mutable
  * program     -> declaration* EOF ;
  * declaration -> varDecl | statement ;
  * varDecl     -> "var" IDENTIFIER ( "=" expression )? ";" ;
- * statement   -> exprStmt | printStmt ;
+ * statement   -> exprStmt | printStmt | block ;
+ * block       -> "{" declaration* "}" ;
  * exprStmt    -> expression ";" ;
  * printStmt   -> "print" expression ";" ;
  * expression  -> assignment ;
@@ -133,7 +134,12 @@ class Parser(val tokens: List[Token]):
     throw error(peek(), "Expect expression.")
 
   def statement(): Stmt =
-    if matchTokens(PRINT) then printStatement() else expressionStatement()
+    if matchTokens(PRINT) then
+      printStatement()
+    else if matchTokens(LEFT_BRACE) then
+      BlockStmt(block())
+    else
+      expressionStatement()
 
   def printStatement(): Stmt =
     val value = expression()
@@ -175,6 +181,13 @@ class Parser(val tokens: List[Token]):
           expr
     else
       expr
+
+  def block(): List[Stmt] =
+    var statements = mutable.ListBuffer.empty[Stmt]
+    while !check(RIGHT_BRACE) && !isAtEnd() do
+      statements.addOne(declaration())
+    consume(RIGHT_BRACE, "Expect '}' after block.")
+    statements.toList
 
   def parse(): List[Stmt] =
     var statements = mutable.ListBuffer[Stmt]()

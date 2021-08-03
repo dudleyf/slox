@@ -2,14 +2,17 @@ package lox
 
 import scala.collection.mutable
 
-class Environment:
+class Environment(val enclosing: Environment = null):
   private val values = mutable.HashMap[String, Any]()
 
   def get(name: Token): Any =
     values.get(name.lexeme) match
       case Some(v) => v
       case None =>
-        throw new RuntimeError(name, s"Undefined variable '${name.lexeme}'.")
+        if enclosing != null then
+          enclosing.get(name)
+        else
+          throw new RuntimeError(name, s"Undefined variable '${name.lexeme}'.")
 
 
   def define(name: String, value: Any): Unit =
@@ -19,4 +22,7 @@ class Environment:
     if values.contains(name.lexeme) then
       values.put(name.lexeme, value)
     else
-      throw new RuntimeError(name, s"Undefined variable '${name.lexeme}'.")
+      if enclosing != null then
+        enclosing.assign(name, value)
+      else
+        throw new RuntimeError(name, s"Undefined variable '${name.lexeme}'.")
