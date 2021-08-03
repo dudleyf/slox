@@ -10,7 +10,8 @@ import scala.collection.mutable
  * statement   -> exprStmt | printStmt ;
  * exprStmt    -> expression ";" ;
  * printStmt   -> "print" expression ";" ;
- * expression  -> equality ;
+ * expression  -> assignment ;
+ * assignment  -> IDENTIFIER "=" assignment | equality ;
  * equality    -> comparison ( ( "!=" | "==" ) comparison )* ;
  * comparison  -> term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
  * term        -> factor ( ( "=" | "+" ) factor )* ;
@@ -70,9 +71,8 @@ class Parser(val tokens: List[Token]):
           case CLASS | FUN | VAR | FOR | IF | WHILE | PRINT | RETURN => ()
           case _ => advance()
 
-  // expression -> equality ;
   def expression(): Expr =
-    equality()
+    assignment()
 
   // equality -> comparison ( ( "!=" | "==" ) comparison )* ;
   def equality(): Expr =
@@ -142,7 +142,7 @@ class Parser(val tokens: List[Token]):
 
   def expressionStatement(): Stmt =
     val expr = expression()
-    consume(SEMICOLON, "Expext ';' after expression.")
+    consume(SEMICOLON, "Expect ';' after expression.")
     ExpressionStmt(expr)
 
   def declaration(): Stmt =
@@ -158,6 +158,23 @@ class Parser(val tokens: List[Token]):
     var initializer = if matchTokens(EQUAL) then expression() else null
     consume(SEMICOLON, "Expect ';' after variable declaration.")
     VarStmt(name, initializer)
+
+  def assignment(): Expr =
+    val expr = equality()
+
+    if matchTokens(EQUAL) then
+      val equals = previous()
+      val value = assignment()
+
+      expr match
+        case v: VariableExpr =>
+          val name = v.name
+          AssignExpr(name, value)
+        case _ =>
+          error(equals, "Invalid assignment target.")
+          expr
+    else
+      expr
 
   def parse(): List[Stmt] =
     var statements = mutable.ListBuffer[Stmt]()

@@ -14,3 +14,9 @@ class Environment:
 
   def define(name: String, value: Any): Unit =
     values.put(name, value)
+
+  def assign(name: Token, value: Any): Unit =
+    if values.contains(name.lexeme) then
+      values.put(name.lexeme, value)
+    else
+      throw new RuntimeError(name, s"Undefined variable '${name.lexeme}'.")

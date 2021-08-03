@@ -63,7 +63,7 @@ class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit] {
 
   override def visit(stmt: PrintStmt): Unit =
     val value = evaluate(stmt.expression)
-    print(stringify(value))
+    println(stringify(value))
 
   override def visit(stmt: ExpressionStmt): Unit =
     evaluate(stmt.expression)
@@ -136,4 +136,9 @@ class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit] {
       null
 
     environment.define(stmt.name.lexeme, value)
+
+  override def visit(expr: AssignExpr): Any =
+    val value = evaluate(expr.value)
+    environment.assign(expr.name, value)
+    value
 }

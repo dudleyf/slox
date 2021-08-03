@@ -9,6 +9,7 @@ trait ExprVisitor[T]:
   def visit(expr: LiteralExpr): T
   def visit(expr: UnaryExpr): T
   def visit(expr: VariableExpr): T
+  def visit(expr: AssignExpr): T
 
 case class BinaryExpr(left: Expr, operator: Token, right: Expr) extends Expr:
   override def accept[T](visitor: ExprVisitor[T]): T = visitor.visit(this)
@@ -23,6 +24,9 @@ case class UnaryExpr(operator: Token, right: Expr) extends Expr:
   override def accept[T](visitor: ExprVisitor[T]): T = visitor.visit(this)
 
 case class VariableExpr(name: Token) extends Expr:
+  override def accept[T](visitor: ExprVisitor[T]): T = visitor.visit(this)
+
+case class AssignExpr(name: Token, value: Expr) extends Expr:
   override def accept[T](visitor: ExprVisitor[T]): T = visitor.visit(this)
 
 
@@ -48,6 +52,8 @@ object TreePrinter extends ExprVisitor[String], StmtVisitor[String]:
   override def visit(expr: VariableExpr): String = ???
 
   override def visit(stmt: VarStmt): String = ???
+
+  override def visit(expr: AssignExpr): String = ???
 
   def print(expr: Expr): String = expr.accept(this)
 

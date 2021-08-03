@@ -30,14 +30,21 @@ object TestLox {
     stdOut.toString()
 }
 
-import lox.TestLox.*
+class TestLox:
+  val interpreter = Interpreter()
+  val outputBuffer = StringBuilder()
 
-abstract class TestCase extends AnyFunSuite with should.Matchers
+  import TestLox.*
 
+  def execute(source: String): String =
+    val stmts = parse(source)
+    val stdOut = ByteArrayOutputStream()
+    Console.withOut(stdOut) {
+      interpreter.interpret(stmts)
+    }
+    val result = stdOut.toString()
+    outputBuffer ++= result
+    result
 
-
-
-
-
-
-
+abstract class TestCase extends AnyFunSuite with should.Matchers:
+  import TestLox.*
