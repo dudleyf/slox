@@ -7,7 +7,8 @@ import scala.collection.mutable
  * program     -> declaration* EOF ;
  * declaration -> varDecl | statement ;
  * varDecl     -> "var" IDENTIFIER ( "=" expression )? ";" ;
- * statement   -> exprStmt | printStmt | block ;
+ * statement   -> exprStmt | ifStmt | printStmt | block ;
+ * ifStmt      -> "if" "(" expression ")" statement ( "else" statement )? ;
  * block       -> "{" declaration* "}" ;
  * exprStmt    -> expression ";" ;
  * printStmt   -> "print" expression ";" ;
@@ -121,25 +122,35 @@ class Parser(val tokens: List[Token]):
 
   // primary -> NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" ;
   def primary(): Expr =
-    if matchTokens(FALSE) then return LiteralExpr(false)
-    if matchTokens(TRUE) then return LiteralExpr(true)
-    if matchTokens(NIL) then return LiteralExpr(null)
-    if matchTokens(NUMBER, STRING) then return LiteralExpr(previous().literal)
-    if matchTokens(IDENTIFIER) then return VariableExpr(previous())
-    if (matchTokens(LEFT_PAREN)) {
+    if matchTokens(FALSE) then LiteralExpr(false)
+    else if matchTokens(TRUE) then LiteralExpr(true)
+    else if matchTokens(NIL) then LiteralExpr(null)
+    else if matchTokens(NUMBER, STRING) then LiteralExpr(previous().literal)
+    else if matchTokens(IDENTIFIER) then VariableExpr(previous())
+    else if (matchTokens(LEFT_PAREN)) {
       val expr = expression()
       consume(RIGHT_PAREN, "Expect ')' after expression.")
-      return GroupingExpr(expr)
+      GroupingExpr(expr)
     }
-    throw error(peek(), "Expect expression.")
+    else throw error(peek(), "Expect expression.")
 
   def statement(): Stmt =
-    if matchTokens(PRINT) then
+    if matchTokens(IF) then
+      ifStatement()
+    else if matchTokens(PRINT) then
       printStatement()
     else if matchTokens(LEFT_BRACE) then
       BlockStmt(block())
     else
       expressionStatement()
+
+  def ifStatement(): Stmt =
+    consume(LEFT_PAREN, "Expect '(' after 'if'.")
+    val condition = expression()
+    consume(RIGHT_PAREN, "Expect ')' after if condition.")
+    val thenBranch = statement()
+    val elseBranch = if matchTokens(ELSE) then statement() else null
+    IfStmt(condition, thenBranch, elseBranch)
 
   def printStatement(): Stmt =
     val value = expression()

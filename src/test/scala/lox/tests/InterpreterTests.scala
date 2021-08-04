@@ -44,3 +44,8 @@ class InterpreterTests extends TestCase :
         |""".stripMargin
     execute(src) shouldEqual(expect)
   }
+
+  test("if statement") {
+    execute("if (true) { print 1; } else { print 2; }") shouldEqual("1\n")
+    execute("if (false) { print 1; } else { print 2; }") shouldEqual("2\n")
+  }

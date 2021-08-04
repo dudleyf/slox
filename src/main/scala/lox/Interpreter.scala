@@ -145,6 +145,12 @@ class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit] {
   override def visit(stmt: BlockStmt): Unit =
     executeBlock(stmt.statements, Environment(environment))
 
+  override def visit(stmt: IfStmt): Unit =
+    if isTruthy(evaluate(stmt.condition)) then
+      execute(stmt.thenBranch)
+    else if stmt.elseBranch != null then
+      execute(stmt.elseBranch)
+
   def executeBlock(statements: List[Stmt], environment: Environment): Unit =
     val previous = this.environment
     try
