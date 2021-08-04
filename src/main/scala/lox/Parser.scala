@@ -7,7 +7,8 @@ import scala.collection.mutable
  * program     -> declaration* EOF ;
  * declaration -> varDecl | statement ;
  * varDecl     -> "var" IDENTIFIER ( "=" expression )? ";" ;
- * statement   -> exprStmt | ifStmt | printStmt | block ;
+ * statement   -> exprStmt | ifStmt | printStmt | whileStmt | block ;
+ * whileStmt   -> "while" "(" expression ")" statement ;
  * ifStmt      -> "if" "(" expression ")" statement ( "else" statement )? ;
  * block       -> "{" declaration* "}" ;
  * exprStmt    -> expression ";" ;
@@ -78,7 +79,6 @@ class Parser(val tokens: List[Token]):
   def expression(): Expr =
     assignment()
 
-  // equality -> comparison ( ( "!=" | "==" ) comparison )* ;
   def equality(): Expr =
     var expr = comparison()
     while matchTokens(BANG_EQUAL, EQUAL_EQUAL) do
@@ -87,7 +87,6 @@ class Parser(val tokens: List[Token]):
       expr = BinaryExpr(expr, operator, right)
     expr
 
-  // comparison -> term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
   def comparison(): Expr =
     var expr = term()
     while matchTokens(GREATER, GREATER_EQUAL, LESS, LESS_EQUAL) do
@@ -96,16 +95,14 @@ class Parser(val tokens: List[Token]):
       expr = BinaryExpr(expr, operator, right)
     expr
 
-  // term -> factor ( ( "=" | "+" ) factor )* ;
   def term(): Expr =
     var expr = factor()
-    while matchTokens(EQUAL, PLUS) do
+    while matchTokens(MINUS, PLUS) do
       val operator = previous()
       val right = factor()
       expr = BinaryExpr(expr, operator, right)
     expr
 
-  // factor -> unary ( ( "/" | "*" ) unary )* ;
   def factor(): Expr =
     var expr = unary()
     while matchTokens(SLASH, STAR) do
@@ -114,7 +111,6 @@ class Parser(val tokens: List[Token]):
       expr = BinaryExpr(expr, operator, right)
     expr
 
-  // unary -> ( "!" | "-" ) unary | primary ;
   def unary(): Expr =
     if matchTokens(BANG, MINUS) then
       val operator = previous()
@@ -123,7 +119,6 @@ class Parser(val tokens: List[Token]):
     else
       primary()
 
-  // primary -> NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" ;
   def primary(): Expr =
     if matchTokens(FALSE) then LiteralExpr(false)
     else if matchTokens(TRUE) then LiteralExpr(true)
@@ -138,14 +133,11 @@ class Parser(val tokens: List[Token]):
     else throw error(peek(), "Expect expression.")
 
   def statement(): Stmt =
-    if matchTokens(IF) then
-      ifStatement()
-    else if matchTokens(PRINT) then
-      printStatement()
-    else if matchTokens(LEFT_BRACE) then
-      BlockStmt(block())
-    else
-      expressionStatement()
+    if matchTokens(IF) then ifStatement()
+    else if matchTokens(PRINT) then printStatement()
+    else if matchTokens(WHILE) then whileStatement()
+    else if matchTokens(LEFT_BRACE) then BlockStmt(block())
+    else expressionStatement()
 
   def ifStatement(): Stmt =
     consume(LEFT_PAREN, "Expect '(' after 'if'.")
@@ -164,6 +156,13 @@ class Parser(val tokens: List[Token]):
     val expr = expression()
     consume(SEMICOLON, "Expect ';' after expression.")
     ExpressionStmt(expr)
+
+  def whileStatement(): Stmt =
+    consume(LEFT_PAREN, "Expect '(' after 'while'.")
+    val condition = expression()
+    consume(RIGHT_PAREN, "Expect ')' after condition")
+    val body = statement()
+    WhileStmt(condition, body)
 
   def declaration(): Stmt =
     try

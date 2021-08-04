@@ -6,13 +6,18 @@ class InterpreterTests extends TestCase :
     execute("print 1+2;") shouldEqual ("3\n")
   }
 
-  test("variable assignment") {
-    execute("var x = 1;\nprint x;") shouldEqual("1\n")
+  test("variable declaration") {
+    execute("var x = 1;\nprint x;") shouldEqual ("1\n")
   }
 
-  test ("scopes") {
-    val src = """
-        |var a = "global a";
+  test("variable assignment") {
+    var x = parse("var x = 1;\nx = 2;\nprint x;")
+    execute("var x = 1;\nx = 2;\nprint x;") shouldEqual ("2\n")
+  }
+
+  test("scopes") {
+    val src =
+      """var a = "global a";
         |var b = "global b";
         |var c = "global c";
         |{
@@ -32,7 +37,7 @@ class InterpreterTests extends TestCase :
         |print b;
         |print c;""".stripMargin
     val expect =
-    """inner a
+      """inner a
         |outer b
         |global c
         |outer a
@@ -42,12 +47,12 @@ class InterpreterTests extends TestCase :
         |global b
         |global c
         |""".stripMargin
-    execute(src) shouldEqual(expect)
+    execute(src) shouldEqual (expect)
   }
 
   test("if statement") {
-    execute("if (true) { print 1; } else { print 2; }") shouldEqual("1\n")
-    execute("if (false) { print 1; } else { print 2; }") shouldEqual("2\n")
+    execute("if (true) { print 1; } else { print 2; }") shouldEqual ("1\n")
+    execute("if (false) { print 1; } else { print 2; }") shouldEqual ("2\n")
   }
 
   test("logical expressions") {
@@ -55,4 +60,19 @@ class InterpreterTests extends TestCase :
     execute("print nil or \"yes\";") shouldEqual "yes\n"
     execute("print \"hi\" and false;") shouldEqual "false\n"
     execute("print \"hi\" and true;") shouldEqual "true\n"
+  }
+
+  test("while loop") {
+    val source =
+      """var x = 0;
+        |while (x < 3) {
+        |  print x;
+        |  x = x + 1;
+        |}""".stripMargin
+    val expected =
+      """0
+        |1
+        |2
+        |""".stripMargin
+    execute(source) shouldEqual expected
   }

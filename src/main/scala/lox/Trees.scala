@@ -33,7 +33,6 @@ case class AssignExpr(name: Token, value: Expr) extends Expr:
 case class LogicalExpr(left: Expr, operator: Token, right: Expr) extends Expr:
   override def accept[T](visitor: ExprVisitor[T]): T = visitor.visit(this)
 
-
 sealed abstract class Stmt:
   def accept[R](visitor: StmtVisitor[R]): R
 
@@ -43,6 +42,7 @@ trait StmtVisitor[R]:
   def visit(stmt: VarStmt): R
   def visit(stmt: BlockStmt): R
   def visit(stmt: IfStmt): R
+  def visit(stmt: WhileStmt): R
 
 case class PrintStmt(expression: Expr) extends Stmt:
   override def accept[T](visitor: StmtVisitor[T]): T = visitor.visit(this)
@@ -57,4 +57,7 @@ case class BlockStmt(statements: List[Stmt]) extends Stmt:
   override def accept[R](visitor: StmtVisitor[R]): R = visitor.visit(this)
 
 case class IfStmt(condition: Expr, thenBranch: Stmt, elseBranch: Stmt) extends Stmt:
+  override def accept[R](visitor: StmtVisitor[R]): R = visitor.visit(this)
+
+case class WhileStmt(condition: Expr, body: Stmt) extends Stmt:
   override def accept[R](visitor: StmtVisitor[R]): R = visitor.visit(this)

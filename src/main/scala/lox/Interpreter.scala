@@ -143,6 +143,10 @@ class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit]:
       if !isTruthy(left) then return left
     evaluate(expr.right)
 
+  override def visit(stmt: WhileStmt): Unit =
+    while isTruthy(evaluate(stmt.condition)) do
+      execute(stmt.body)
+
   def executeBlock(statements: List[Stmt], environment: Environment): Unit =
     val previous = this.environment
     try
