@@ -1,16 +1,13 @@
-package lox
-
-import lox.Lox.interpreter
+package lox.tests
 
 class InterpreterTests extends TestCase :
-  import TestLox.*
 
   test("evaluates a simple arithmetic expression") {
-    eval("print 1+2;") shouldEqual ("3\n")
+    execute("print 1+2;") shouldEqual ("3\n")
   }
 
   test("variable assignment") {
-    eval("var x = 1;\nprint x;") shouldEqual("1\n")
+    execute("var x = 1;\nprint x;") shouldEqual("1\n")
   }
 
   test ("scopes") {
@@ -45,5 +42,5 @@ class InterpreterTests extends TestCase :
         |global b
         |global c
         |""".stripMargin
-    eval(src) shouldEqual(expect)
+    execute(src) shouldEqual(expect)
   }

@@ -1,4 +1,6 @@
-package lox
+package lox.tests
+
+import lox.*
 
 class TreePrinterTests extends TestCase :
   test("stringifies an expression") {
