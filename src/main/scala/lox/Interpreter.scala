@@ -2,7 +2,7 @@ package lox
 
 class RuntimeError(val token: Token, msg: String) extends Exception(msg)
 
-class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit] {
+class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit]:
   import TokenType.*
 
   private var environment = Environment()
@@ -13,26 +13,22 @@ class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit] {
     case _ => true
   }
 
-  def isEqual(a: Any, b: Any): Boolean = (a, b) match {
+  def isEqual(a: Any, b: Any): Boolean = (a, b) match
     case (null, null) => true
     case (null, _) => false
     case (a, b) => a.equals(b)
-  }
 
-  def num(obj: Any): Double = obj match {
+  def num(obj: Any): Double = obj match
     case d: Double => d
     case x => x.toString.toDouble
-  }
 
-  def checkNumberOperand(operator: Token, operand: Any): Unit = operand match {
+  def checkNumberOperand(operator: Token, operand: Any): Unit = operand match
     case o: Double => ()
     case _ => throw new RuntimeError(operator, "Operand must be a number")
-  }
 
-  def checkNumberOperands(operator: Token, left: Any, right: Any): Unit = (left, right) match {
+  def checkNumberOperands(operator: Token, left: Any, right: Any): Unit = (left, right) match
     case (l: Double, r: Double) => ()
     case _ => throw new RuntimeError(operator, "Operands must be numbers")
-  }
 
   def evaluate(expr: Expr): Any =
     expr.accept(this)
@@ -41,25 +37,20 @@ class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit] {
     stmt.accept(this)
 
   def interpret(stmts: List[Stmt]): Unit =
-    try {
-      for (stmt <- stmts) {
-        execute(stmt)
-      }
-    } catch {
+    try
+      for stmt <- stmts do execute(stmt)
+    catch
       case e: RuntimeError => Lox.runtimeError(e)
-    }
 
-  def stringify(obj: Any): String = obj match {
+  def stringify(obj: Any): String = obj match
     case null => "nil"
     case d: Double => {
       var text = d.toString()
-      if (text.endsWith(".0")) {
+      if text.endsWith(".0") then
         text = text.substring(0, text.length() - 2)
-      }
       text
     }
     case _ => obj.toString()
-  }
 
   override def visit(stmt: PrintStmt): Unit =
     val value = evaluate(stmt.expression)
@@ -72,44 +63,37 @@ class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit] {
     val left = evaluate(expr.left)
     val right = evaluate(expr.right)
 
-    expr.operator.tokenType match {
-      case GREATER => {
+    expr.operator.tokenType match
+      case GREATER =>
         checkNumberOperands(expr.operator, left, right)
         num(left) > num(right)
-      }
-      case GREATER_EQUAL => {
+      case GREATER_EQUAL =>
         checkNumberOperands(expr.operator, left, right)
         num(left) >= num(right)
-      }
-      case LESS => {
+      case LESS =>
         checkNumberOperands(expr.operator, left, right)
         num(left) < num(right)
-      }
-      case LESS_EQUAL => {
+      case LESS_EQUAL =>
         checkNumberOperands(expr.operator, left, right)
         num(left) <= num(right)
-      }
-      case BANG_EQUAL => !isEqual(left, right)
-      case EQUAL_EQUAL => isEqual(left, right)
-      case MINUS => {
+      case BANG_EQUAL =>
+        !isEqual(left, right)
+      case EQUAL_EQUAL =>
+        isEqual(left, right)
+      case MINUS =>
         checkNumberOperands(expr.operator, left, right)
         num(left) - num(right)
-      }
-      case PLUS => (left, right) match {
+      case PLUS => (left, right) match
         case (x: Double, y: Double) => num(left) + num(right)
         case (x: String, y: String) => x + y
         case _ => throw new RuntimeError(expr.operator, "Operands must be two numbers or two strings.")
-      }
-      case SLASH => {
+      case SLASH =>
         checkNumberOperands(expr.operator, left, right)
         num(left) / num(right)
-      }
-      case STAR => {
+      case STAR =>
         checkNumberOperands(expr.operator, left, right)
         num(left) * num(right)
-      }
       case _ => null
-    }
 
   override def visit(expr: GroupingExpr): Any =
     evaluate(expr.expression)
@@ -151,12 +135,19 @@ class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit] {
     else if stmt.elseBranch != null then
       execute(stmt.elseBranch)
 
+  override def visit(expr: LogicalExpr): Any =
+    val left = evaluate(expr.left)
+    if expr.operator.tokenType == TokenType.OR then
+      if isTruthy(left) then return left
+    else
+      if !isTruthy(left) then return left
+    evaluate(expr.right)
+
   def executeBlock(statements: List[Stmt], environment: Environment): Unit =
     val previous = this.environment
     try
       this.environment = environment
       statements.foreach(execute)
-    finally {
+    finally
       this.environment = previous
-    }
-}
+

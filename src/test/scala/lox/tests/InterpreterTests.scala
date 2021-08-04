@@ -49,3 +49,10 @@ class InterpreterTests extends TestCase :
     execute("if (true) { print 1; } else { print 2; }") shouldEqual("1\n")
     execute("if (false) { print 1; } else { print 2; }") shouldEqual("2\n")
   }
+
+  test("logical expressions") {
+    execute("print \"hi\" or 2;") shouldEqual "hi\n"
+    execute("print nil or \"yes\";") shouldEqual "yes\n"
+    execute("print \"hi\" and false;") shouldEqual "false\n"
+    execute("print \"hi\" and true;") shouldEqual "true\n"
+  }

@@ -13,7 +13,9 @@ import scala.collection.mutable
  * exprStmt    -> expression ";" ;
  * printStmt   -> "print" expression ";" ;
  * expression  -> assignment ;
- * assignment  -> IDENTIFIER "=" assignment | equality ;
+ * assignment  -> IDENTIFIER "=" assignment | logic_or ;
+ * logic_or    -> logic_and ( "or" logic_and )* ;
+ * logic_and   -> equality ( "and" equality )* ;
  * equality    -> comparison ( ( "!=" | "==" ) comparison )* ;
  * comparison  -> term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
  * term        -> factor ( ( "=" | "+" ) factor )* ;
@@ -117,8 +119,9 @@ class Parser(val tokens: List[Token]):
     if matchTokens(BANG, MINUS) then
       val operator = previous()
       val right = unary()
-      return UnaryExpr(operator, right)
-    primary()
+      UnaryExpr(operator, right)
+    else
+      primary()
 
   // primary -> NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" ;
   def primary(): Expr =
@@ -177,7 +180,7 @@ class Parser(val tokens: List[Token]):
     VarStmt(name, initializer)
 
   def assignment(): Expr =
-    val expr = equality()
+    val expr = or()
 
     if matchTokens(EQUAL) then
       val equals = previous()
@@ -200,8 +203,25 @@ class Parser(val tokens: List[Token]):
     consume(RIGHT_BRACE, "Expect '}' after block.")
     statements.toList
 
+  def or(): Expr =
+    var expr = and()
+    while matchTokens(OR) do
+      var operator = previous()
+      var right = and()
+      expr = LogicalExpr(expr, operator, right)
+    expr
+
+  def and(): Expr =
+    var expr = equality()
+    while matchTokens(AND) do
+      var operator = previous()
+      var right = equality()
+      expr = LogicalExpr(expr, operator, right)
+    expr
+
   def parse(): List[Stmt] =
     var statements = mutable.ListBuffer[Stmt]()
     while !isAtEnd() do
       statements.addOne(declaration())
     statements.toList
+

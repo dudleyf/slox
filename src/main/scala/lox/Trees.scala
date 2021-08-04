@@ -10,6 +10,7 @@ trait ExprVisitor[T]:
   def visit(expr: UnaryExpr): T
   def visit(expr: VariableExpr): T
   def visit(expr: AssignExpr): T
+  def visit(expr: LogicalExpr): T
 
 case class BinaryExpr(left: Expr, operator: Token, right: Expr) extends Expr:
   override def accept[T](visitor: ExprVisitor[T]): T = visitor.visit(this)
@@ -27,6 +28,9 @@ case class VariableExpr(name: Token) extends Expr:
   override def accept[T](visitor: ExprVisitor[T]): T = visitor.visit(this)
 
 case class AssignExpr(name: Token, value: Expr) extends Expr:
+  override def accept[T](visitor: ExprVisitor[T]): T = visitor.visit(this)
+
+case class LogicalExpr(left: Expr, operator: Token, right: Expr) extends Expr:
   override def accept[T](visitor: ExprVisitor[T]): T = visitor.visit(this)
 
 
