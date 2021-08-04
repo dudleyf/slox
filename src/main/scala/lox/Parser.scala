@@ -7,7 +7,8 @@ import scala.collection.mutable
  * program     -> declaration* EOF ;
  * declaration -> varDecl | statement ;
  * varDecl     -> "var" IDENTIFIER ( "=" expression )? ";" ;
- * statement   -> exprStmt | ifStmt | printStmt | whileStmt | block ;
+ * statement   -> exprStmt | forStmt | ifStmt | printStmt | whileStmt | block ;
+ * forStmt     -> "for" "(" varDecl | exprStmt | ";" ) expression? ";" expression? ")" statement ;
  * whileStmt   -> "while" "(" expression ")" statement ;
  * ifStmt      -> "if" "(" expression ")" statement ( "else" statement )? ;
  * block       -> "{" declaration* "}" ;
@@ -133,11 +134,39 @@ class Parser(val tokens: List[Token]):
     else throw error(peek(), "Expect expression.")
 
   def statement(): Stmt =
-    if matchTokens(IF) then ifStatement()
+    if matchTokens(FOR) then forStatement()
+    else if matchTokens(IF) then ifStatement()
     else if matchTokens(PRINT) then printStatement()
     else if matchTokens(WHILE) then whileStatement()
     else if matchTokens(LEFT_BRACE) then BlockStmt(block())
     else expressionStatement()
+
+  def forStatement(): Stmt =
+    consume(LEFT_PAREN, "Expect '(' after 'for'.")
+    var initializer = if matchTokens(SEMICOLON) then
+      null
+    else if matchTokens(VAR) then
+      varDeclaration()
+    else
+      expressionStatement()
+
+    var condition = if !check(SEMICOLON) then expression() else null
+    consume(SEMICOLON, "Expect ';' after loop condition.")
+
+    var increment = if !check(RIGHT_PAREN) then expression() else null
+    consume(RIGHT_PAREN, "Expect ')' after for clauses.")
+
+    var body = statement()
+    if increment != null then
+      body = BlockStmt(List(body, ExpressionStmt(increment)))
+
+    if condition == null then condition = LiteralExpr(true)
+    body = WhileStmt(condition, body)
+
+    if initializer != null then
+      body = BlockStmt(List(initializer, body))
+
+    body
 
   def ifStatement(): Stmt =
     consume(LEFT_PAREN, "Expect '(' after 'if'.")

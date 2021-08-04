@@ -76,3 +76,16 @@ class InterpreterTests extends TestCase :
         |""".stripMargin
     execute(source) shouldEqual expected
   }
+
+  test("for loop") {
+    val source =
+      """for (var x = 0; x < 3; x = x + 1) {
+        |  print x;
+        |}""".stripMargin
+    val expected =
+      """0
+        |1
+        |2
+        |""".stripMargin
+    execute(source) shouldEqual expected
+  }
