@@ -1,11 +1,24 @@
 package lox
 
+import scala.collection.mutable
+
 class RuntimeError(val token: Token, msg: String) extends Exception(msg)
 
-class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit]:
+class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit] :
   import TokenType.*
 
-  private var environment = Environment()
+  val globals = Environment()
+
+  globals.define("clock", new LoxCallable {
+    override def arity(): Int = 0
+
+    override def call(interpreter: Interpreter, arguments: List[Any]): Any =
+      System.currentTimeMillis().toDouble
+
+    override def toString(): String = "<native fn>"
+  })
+
+  private var environment = globals
 
   def isTruthy(obj: Any): Boolean = obj match {
     case null => false
@@ -139,13 +152,25 @@ class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit]:
     val left = evaluate(expr.left)
     if expr.operator.tokenType == TokenType.OR then
       if isTruthy(left) then return left
-    else
-      if !isTruthy(left) then return left
+      else if !isTruthy(left) then return left
     evaluate(expr.right)
 
   override def visit(stmt: WhileStmt): Unit =
     while isTruthy(evaluate(stmt.condition)) do
       execute(stmt.body)
+
+  override def visit(expr: CallExpr): Any =
+    val callee = evaluate(expr.callee)
+    var arguments = mutable.ArrayBuffer.empty[Any]
+    for argument <- expr.arguments do
+      arguments.addOne(evaluate(argument))
+    if !callee.isInstanceOf[LoxCallable] then
+      throw new RuntimeError(expr.paren, "Can only call functions and classes.")
+    val function = callee.asInstanceOf[LoxCallable]
+    if arguments.size != function.arity() then
+      throw new RuntimeError(expr.paren, s"Expected ${function.arity()} arguments but got ${arguments.size}.")
+
+    function.call(this, arguments.toList)
 
   def executeBlock(statements: List[Stmt], environment: Environment): Unit =
     val previous = this.environment
@@ -154,4 +179,3 @@ class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit]:
       statements.foreach(execute)
     finally
       this.environment = previous
-

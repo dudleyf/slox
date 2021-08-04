@@ -22,12 +22,15 @@ import scala.collection.mutable
  * comparison  -> term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
  * term        -> factor ( ( "=" | "+" ) factor )* ;
  * factor      -> unary ( ( "/" | "*" ) unary )* ;
- * unary       -> ( "!" | "-" ) unary | primary ;
+ * unary       -> ( "!" | "-" ) unary | call ;
+ * call        -> primary ( "(" arguments? ")" )* ;
+ * arguments   -> expression ( "," expression )* ;
  * primary     -> NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" | IDENTIFIER ;
  */
 class Parser(val tokens: List[Token]):
-
   import TokenType.*
+
+  val MAX_ARGS = 255;
 
   class ParseError extends Exception
 
@@ -118,7 +121,26 @@ class Parser(val tokens: List[Token]):
       val right = unary()
       UnaryExpr(operator, right)
     else
-      primary()
+      call()
+
+  def call(): Expr =
+    var expr = primary()
+    while matchTokens(LEFT_PAREN) do
+      expr = finishCall(expr)
+    expr
+
+
+  def finishCall(callee: Expr): Expr =
+    var arguments = mutable.ArrayBuffer.empty[Expr]
+    if !check(RIGHT_PAREN) then
+      while
+        if arguments.size >= MAX_ARGS then error(peek(), "Can't have more than 255 arguments.")
+        arguments.addOne(expression())
+        matchTokens(COMMA)
+      do ()
+    val paren = consume(RIGHT_PAREN, "Expect ')' after arguments.")
+    CallExpr(callee, paren, arguments.toList)
+
 
   def primary(): Expr =
     if matchTokens(FALSE) then LiteralExpr(false)
