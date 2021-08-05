@@ -95,7 +95,6 @@ class InterpreterTests extends TestCase :
     result.toDoubleOption shouldBe defined
   }
 
-
   test("user-defined functions") {
     val source =
       """fun sayHi(first, last) {
@@ -104,5 +103,42 @@ class InterpreterTests extends TestCase :
         |
         |sayHi("Dear", "Reader");""".stripMargin
     val expected = "Hi, Dear Reader!\n"
+    execute(source) shouldBe expected
+  }
+
+  test("return") {
+    val source =
+      """fun foo() {
+        |  return 1;
+        |}
+        |var x = foo();
+        |print x;
+        |""".stripMargin
+    val expected = "1\n"
+    execute(source) shouldBe expected
+  }
+
+  test("fib") {
+    val source =
+      """fun fib(n) {
+        |  if (n <= 1) return n;
+        |  return fib(n - 2) + fib(n - 1);
+        |}
+        |
+        |for (var i = 0; i < 10; i = i + 1) {
+        |  print fib(i);
+        |}""".stripMargin
+    val expected =
+      """0
+        |1
+        |1
+        |2
+        |3
+        |5
+        |8
+        |13
+        |21
+        |34
+        |""".stripMargin
     execute(source) shouldBe expected
   }

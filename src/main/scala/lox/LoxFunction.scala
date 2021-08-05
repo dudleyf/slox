@@ -7,7 +7,10 @@ class LoxFunction(private val declaration: FunctionStmt) extends LoxCallable:
     val environment = Environment(interpreter.globals)
     for ((param, arg) <- declaration.params.zip(arguments)) do
       environment.define(param.lexeme, arg)
-    interpreter.executeBlock(declaration.body, environment)
+    try
+      interpreter.executeBlock(declaration.body, environment)
+    catch
+      case r: Return => return r.value
     null
 
   override def toString: String = s"<fn ${declaration.name.lexeme}>"

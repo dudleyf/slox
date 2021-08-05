@@ -10,7 +10,8 @@ import scala.collection.mutable
  * function    -> IDENTIFIER "(" parameters? ")" block ;
  * parameters  -> IDENTIFIER ( "," IDENTIFIER )* ;
  * varDecl     -> "var" IDENTIFIER ( "=" expression )? ";" ;
- * statement   -> exprStmt | forStmt | ifStmt | printStmt | whileStmt | block ;
+ * statement   -> exprStmt | forStmt | ifStmt | printStmt | returnStmt | whileStmt | block ;
+ * returnStmt  -> "return" expression? ";" ;
  * forStmt     -> "for" "(" varDecl | exprStmt | ";" ) expression? ";" expression? ")" statement ;
  * whileStmt   -> "while" "(" expression ")" statement ;
  * ifStmt      -> "if" "(" expression ")" statement ( "else" statement )? ;
@@ -160,9 +161,16 @@ class Parser(val tokens: List[Token]):
     if matchTokens(FOR) then forStatement()
     else if matchTokens(IF) then ifStatement()
     else if matchTokens(PRINT) then printStatement()
+    else if matchTokens(RETURN) then returnStatement()
     else if matchTokens(WHILE) then whileStatement()
     else if matchTokens(LEFT_BRACE) then BlockStmt(block())
     else expressionStatement()
+
+  def returnStatement(): Stmt =
+    val keyword = previous()
+    var value = if !check(SEMICOLON) then expression() else null
+    consume(SEMICOLON, "Expect ';' after return value.")
+    ReturnStmt(keyword, value)
 
   def forStatement(): Stmt =
     consume(LEFT_PAREN, "Expect '(' after 'for'.")

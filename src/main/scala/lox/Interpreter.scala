@@ -2,7 +2,9 @@ package lox
 
 import scala.collection.mutable
 
-class RuntimeError(val token: Token, msg: String) extends Exception(msg)
+class RuntimeError(val token: Token, msg: String) extends RuntimeException(msg)
+
+class Return(val value: Any) extends RuntimeException(null, null, false, false)
 
 class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit] :
   import TokenType.*
@@ -174,6 +176,10 @@ class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit] :
   override def visit(stmt: FunctionStmt): Unit =
     val function = LoxFunction(stmt)
     environment.define(stmt.name.lexeme, function)
+
+  override def visit(stmt: ReturnStmt): Unit =
+    var value = if stmt.value != null then evaluate(stmt.value) else null
+    throw new Return(value)
 
   def executeBlock(statements: List[Stmt], environment: Environment): Unit =
     val previous = this.environment

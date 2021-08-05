@@ -48,6 +48,7 @@ trait StmtVisitor[R]:
   def visit(stmt: IfStmt): R
   def visit(stmt: WhileStmt): R
   def visit(stmt: FunctionStmt): R
+  def visit(stmt: ReturnStmt): R
 
 case class PrintStmt(expression: Expr) extends Stmt:
   override def accept[T](visitor: StmtVisitor[T]): T = visitor.visit(this)
@@ -68,4 +69,7 @@ case class WhileStmt(condition: Expr, body: Stmt) extends Stmt:
   override def accept[R](visitor: StmtVisitor[R]): R = visitor.visit(this)
 
 case class FunctionStmt(name: Token, params: List[Token], body: List[Stmt]) extends Stmt:
+  override def accept[R](visitor: StmtVisitor[R]): R = visitor.visit(this)
+
+case class ReturnStmt(keyword: Token, value: Expr) extends Stmt:
   override def accept[R](visitor: StmtVisitor[R]): R = visitor.visit(this)
