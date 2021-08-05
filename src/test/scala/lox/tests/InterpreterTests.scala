@@ -142,3 +142,23 @@ class InterpreterTests extends TestCase :
         |""".stripMargin
     execute(source) shouldBe expected
   }
+
+  test("local functions") {
+    val source =
+      """fun makeCounter() {
+        |      var i = 0;
+        |      fun count() {
+        |        i = i + 1;
+        |        print i;
+        |      }
+        |
+        |      return count;
+        |    }
+        |
+        |    var counter = makeCounter();
+        |    counter(); // "1".
+        |    counter(); // "2".
+        |""".stripMargin
+    val expected = "1\n2\n"
+    execute(source) shouldBe expected
+  }

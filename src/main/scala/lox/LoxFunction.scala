@@ -1,10 +1,11 @@
 package lox
 
-class LoxFunction(private val declaration: FunctionStmt) extends LoxCallable:
+class LoxFunction(private val declaration: FunctionStmt,
+                  private val closure: Environment) extends LoxCallable:
   override def arity(): Int = declaration.params.size
 
   override def call(interpreter: Interpreter, arguments: List[Any]): Any =
-    val environment = Environment(interpreter.globals)
+    val environment = Environment(closure)
     for ((param, arg) <- declaration.params.zip(arguments)) do
       environment.define(param.lexeme, arg)
     try

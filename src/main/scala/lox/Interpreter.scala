@@ -174,7 +174,7 @@ class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit] :
     function.call(this, arguments.toList)
 
   override def visit(stmt: FunctionStmt): Unit =
-    val function = LoxFunction(stmt)
+    val function = LoxFunction(stmt, environment)
     environment.define(stmt.name.lexeme, function)
 
   override def visit(stmt: ReturnStmt): Unit =
