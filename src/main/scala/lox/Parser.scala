@@ -5,7 +5,10 @@ import scala.collection.mutable
 
 /**
  * program     -> declaration* EOF ;
- * declaration -> varDecl | statement ;
+ * declaration -> funDecl | varDecl | statement ;
+ * funDecl     -> "fun" function ;
+ * function    -> IDENTIFIER "(" parameters? ")" block ;
+ * parameters  -> IDENTIFIER ( "," IDENTIFIER )* ;
  * varDecl     -> "var" IDENTIFIER ( "=" expression )? ";" ;
  * statement   -> exprStmt | forStmt | ifStmt | printStmt | whileStmt | block ;
  * forStmt     -> "for" "(" varDecl | exprStmt | ";" ) expression? ";" expression? ")" statement ;
@@ -129,7 +132,6 @@ class Parser(val tokens: List[Token]):
       expr = finishCall(expr)
     expr
 
-
   def finishCall(callee: Expr): Expr =
     var arguments = mutable.ArrayBuffer.empty[Expr]
     if !check(RIGHT_PAREN) then
@@ -140,7 +142,6 @@ class Parser(val tokens: List[Token]):
       do ()
     val paren = consume(RIGHT_PAREN, "Expect ')' after arguments.")
     CallExpr(callee, paren, arguments.toList)
-
 
   def primary(): Expr =
     if matchTokens(FALSE) then LiteralExpr(false)
@@ -217,11 +218,28 @@ class Parser(val tokens: List[Token]):
 
   def declaration(): Stmt =
     try
-      if matchTokens(VAR) then varDeclaration() else statement()
+      if matchTokens(FUN) then function("function")
+      else if matchTokens(VAR) then varDeclaration()
+      else statement()
     catch
       case e : ParseError =>
         synchronize()
         null
+
+  def function(kind: String): FunctionStmt =
+    val name = consume(IDENTIFIER, s"Expect ${kind} name.")
+    consume(LEFT_PAREN, s"Expect '(' after ${kind} name.")
+    var parameters = mutable.ArrayBuffer.empty[Token]
+    if !check(RIGHT_PAREN) then
+      while
+        if parameters.size >= MAX_ARGS then error(peek(), s"Can't have more than ${MAX_ARGS} parameters.")
+        parameters.addOne(consume(IDENTIFIER, "Expect parameter name."))
+        matchTokens(COMMA)
+      do ()
+    consume(RIGHT_PAREN, "Expect ')' after parameters.")
+    consume(LEFT_BRACE, s"Expect '{' before ${kind} body.")
+    val body = block()
+    FunctionStmt(name, parameters.toList, body)
 
   def varDeclaration(): Stmt =
     val name = consume(IDENTIFIER, "Expect variable name.")
@@ -270,8 +288,7 @@ class Parser(val tokens: List[Token]):
     expr
 
   def parse(): List[Stmt] =
-    var statements = mutable.ListBuffer[Stmt]()
+    var statements = mutable.ArrayBuffer.empty[Stmt]
     while !isAtEnd() do
       statements.addOne(declaration())
     statements.toList
-

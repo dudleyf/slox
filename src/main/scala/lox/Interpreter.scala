@@ -9,27 +9,27 @@ class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit] :
 
   val globals = Environment()
 
-  globals.define("clock", new LoxCallable {
+  private val clockFn = new LoxCallable:
     override def arity(): Int = 0
 
     override def call(interpreter: Interpreter, arguments: List[Any]): Any =
       System.currentTimeMillis().toDouble
 
     override def toString(): String = "<native fn>"
-  })
+
+  globals.define("clock", clockFn)
 
   private var environment = globals
 
-  def isTruthy(obj: Any): Boolean = obj match {
+  def isTruthy(obj: Any): Boolean = obj match
     case null => false
     case b: Boolean => b
     case _ => true
-  }
 
   def isEqual(a: Any, b: Any): Boolean = (a, b) match
     case (null, null) => true
     case (null, _) => false
-    case (a, b) => a.equals(b)
+    case (a, b) => a equals b
 
   def num(obj: Any): Double = obj match
     case d: Double => d
@@ -131,7 +131,6 @@ class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit] :
       evaluate(stmt.initializer)
     else
       null
-
     environment.define(stmt.name.lexeme, value)
 
   override def visit(expr: AssignExpr): Any =
@@ -152,7 +151,8 @@ class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit] :
     val left = evaluate(expr.left)
     if expr.operator.tokenType == TokenType.OR then
       if isTruthy(left) then return left
-      else if !isTruthy(left) then return left
+    else
+        if !isTruthy(left) then return left
     evaluate(expr.right)
 
   override def visit(stmt: WhileStmt): Unit =
@@ -169,8 +169,11 @@ class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit] :
     val function = callee.asInstanceOf[LoxCallable]
     if arguments.size != function.arity() then
       throw new RuntimeError(expr.paren, s"Expected ${function.arity()} arguments but got ${arguments.size}.")
-
     function.call(this, arguments.toList)
+
+  override def visit(stmt: FunctionStmt): Unit =
+    val function = LoxFunction(stmt)
+    environment.define(stmt.name.lexeme, function)
 
   def executeBlock(statements: List[Stmt], environment: Environment): Unit =
     val previous = this.environment

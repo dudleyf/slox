@@ -1,7 +1,6 @@
 package lox.tests
 
 class InterpreterTests extends TestCase :
-
   test("evaluates a simple arithmetic expression") {
     execute("print 1+2;") shouldEqual ("3\n")
   }
@@ -88,4 +87,22 @@ class InterpreterTests extends TestCase :
         |2
         |""".stripMargin
     execute(source) shouldEqual expected
+  }
+
+  test("clock() function") {
+    val source = "print clock();"
+    val result = execute(source);
+    result.toDoubleOption shouldBe defined
+  }
+
+
+  test("user-defined functions") {
+    val source =
+      """fun sayHi(first, last) {
+        |  print "Hi, " + first + " " + last + "!";
+        |}
+        |
+        |sayHi("Dear", "Reader");""".stripMargin
+    val expected = "Hi, Dear Reader!\n"
+    execute(source) shouldBe expected
   }
