@@ -5,7 +5,7 @@ class LoxFunction(private val declaration: FunctionStmt,
   override def arity(): Int = declaration.params.size
 
   override def call(interpreter: Interpreter, arguments: List[Any]): Any =
-    val environment = Environment(closure)
+    val environment = Environment(Some(closure))
     for ((param, arg) <- declaration.params.zip(arguments)) do
       environment.define(param.lexeme, arg)
     try

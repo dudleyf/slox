@@ -141,7 +141,7 @@ class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit] :
     value
 
   override def visit(stmt: BlockStmt): Unit =
-    executeBlock(stmt.statements, Environment(environment))
+    executeBlock(stmt.statements, Environment(Some(environment)))
 
   override def visit(stmt: IfStmt): Unit =
     if isTruthy(evaluate(stmt.condition)) then
