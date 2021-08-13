@@ -19,7 +19,7 @@ case class BinaryExpr(left: Expr, operator: Token, right: Expr) extends Expr:
 case class GroupingExpr(expression: Expr) extends Expr:
   override def accept[T](visitor: ExprVisitor[T]): T = visitor.visit(this)
 
-case class LiteralExpr(value: Any) extends Expr:
+case class LiteralExpr(value: Value) extends Expr:
   override def accept[T](visitor: ExprVisitor[T]): T = visitor.visit(this);
 
 case class UnaryExpr(operator: Token, right: Expr) extends Expr:

@@ -145,10 +145,11 @@ class Parser(val tokens: List[Token]):
     CallExpr(callee, paren, arguments.toList)
 
   def primary(): Expr =
-    if matchTokens(FALSE) then LiteralExpr(false)
-    else if matchTokens(TRUE) then LiteralExpr(true)
-    else if matchTokens(NIL) then LiteralExpr(null)
-    else if matchTokens(NUMBER, STRING) then LiteralExpr(previous().literal)
+    if matchTokens(FALSE) then LiteralExpr(Bool(false))
+    else if matchTokens(TRUE) then LiteralExpr(Bool(true))
+    else if matchTokens(NIL) then LiteralExpr(Nil)
+    else if matchTokens(NUMBER) then LiteralExpr(Num(previous().literal.asInstanceOf[Double]))
+    else if matchTokens(STRING) then LiteralExpr(Str(previous().literal.asInstanceOf[String]))
     else if matchTokens(IDENTIFIER) then VariableExpr(previous())
     else if (matchTokens(LEFT_PAREN)) {
       val expr = expression()
@@ -191,7 +192,7 @@ class Parser(val tokens: List[Token]):
     if increment != null then
       body = BlockStmt(List(body, ExpressionStmt(increment)))
 
-    if condition == null then condition = LiteralExpr(true)
+    if condition == null then condition = LiteralExpr(Bool(true))
     body = WhileStmt(condition, body)
 
     if initializer != null then

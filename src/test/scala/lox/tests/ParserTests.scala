@@ -7,7 +7,7 @@ class ParserTests extends TestCase :
     parse("1 + 2;") shouldEqual List(
       ExpressionStmt(
         BinaryExpr(
-          LiteralExpr(1.0),
+          LiteralExpr(Num(1.0)),
           Token(TokenType.PLUS, "+", null, 1),
-          LiteralExpr(2.0))))
+          LiteralExpr(Num(2.0)))))
   }

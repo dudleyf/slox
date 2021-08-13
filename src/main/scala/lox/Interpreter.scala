@@ -2,11 +2,7 @@ package lox
 
 import scala.collection.mutable
 
-class RuntimeError(val token: Token, msg: String) extends RuntimeException(msg)
-
-class Return(val value: Any) extends RuntimeException(null, null, false, false)
-
-class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit] :
+class Interpreter extends LoxEvaluator, ExprVisitor[Value], StmtVisitor[Unit] :
   import TokenType.*
 
   val globals = Environment()
@@ -14,8 +10,8 @@ class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit] :
   private val clockFn = new LoxCallable:
     override def arity(): Int = 0
 
-    override def call(interpreter: Interpreter, arguments: List[Any]): Any =
-      System.currentTimeMillis().toDouble
+    override def call(interpreter: LoxEvaluator, arguments: Seq[Value]): Value =
+      Num(System.currentTimeMillis().toDouble)
 
     override def toString(): String = "<native fn>"
 
@@ -23,15 +19,15 @@ class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit] :
 
   private var environment = globals
 
-  def isTruthy(obj: Any): Boolean = obj match
-    case null => false
-    case b: Boolean => b
-    case _ => true
+//  def isTruthy(obj: Any): Boolean = obj match
+//    case null => false
+//    case b: Boolean => b
+//    case _ => true
 
-  def isEqual(a: Any, b: Any): Boolean = (a, b) match
-    case (null, null) => true
-    case (null, _) => false
-    case (a, b) => a equals b
+//  def isEqual(a: Any, b: Any): Boolean = (a, b) match
+//    case (null, null) => true
+//    case (null, _) => false
+//    case (a, b) => a equals b
 
   def num(obj: Any): Double = obj match
     case d: Double => d
@@ -45,87 +41,60 @@ class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit] :
     case (l: Double, r: Double) => ()
     case _ => throw new RuntimeError(operator, "Operands must be numbers")
 
-  def evaluate(expr: Expr): Any =
+  def evaluate(expr: Expr): Value =
     expr.accept(this)
 
   def execute(stmt: Stmt): Unit =
     stmt.accept(this)
 
-  def interpret(stmts: List[Stmt]): Unit =
+  def interpret(stmts: Seq[Stmt]): Unit =
     try
       for stmt <- stmts do execute(stmt)
     catch
       case e: RuntimeError => Lox.runtimeError(e)
 
-  def stringify(obj: Any): String = obj match
-    case null => "nil"
-    case d: Double => {
-      var text = d.toString()
-      if text.endsWith(".0") then
-        text = text.substring(0, text.length() - 2)
-      text
-    }
-    case _ => obj.toString()
-
   override def visit(stmt: PrintStmt): Unit =
     val value = evaluate(stmt.expression)
-    println(stringify(value))
+    println(value.toString)
 
   override def visit(stmt: ExpressionStmt): Unit =
     evaluate(stmt.expression)
 
-  override def visit(expr: BinaryExpr): Any =
+  override def visit(expr: BinaryExpr): Value =
     val left = evaluate(expr.left)
     val right = evaluate(expr.right)
 
-    expr.operator.tokenType match
-      case GREATER =>
-        checkNumberOperands(expr.operator, left, right)
-        num(left) > num(right)
-      case GREATER_EQUAL =>
-        checkNumberOperands(expr.operator, left, right)
-        num(left) >= num(right)
-      case LESS =>
-        checkNumberOperands(expr.operator, left, right)
-        num(left) < num(right)
-      case LESS_EQUAL =>
-        checkNumberOperands(expr.operator, left, right)
-        num(left) <= num(right)
-      case BANG_EQUAL =>
-        !isEqual(left, right)
-      case EQUAL_EQUAL =>
-        isEqual(left, right)
-      case MINUS =>
-        checkNumberOperands(expr.operator, left, right)
-        num(left) - num(right)
-      case PLUS => (left, right) match
-        case (x: Double, y: Double) => num(left) + num(right)
-        case (x: String, y: String) => x + y
-        case _ => throw new RuntimeError(expr.operator, "Operands must be two numbers or two strings.")
-      case SLASH =>
-        checkNumberOperands(expr.operator, left, right)
-        num(left) / num(right)
-      case STAR =>
-        checkNumberOperands(expr.operator, left, right)
-        num(left) * num(right)
-      case _ => null
+    (left, expr.operator.tokenType, right) match
+      case (Num(x), GREATER, Num(y)) => Bool(x > y)
+      case (Num(x), GREATER_EQUAL, Num(y)) => Bool(x >= y)
+      case (Num(x), LESS, Num(y)) => Bool(x < y)
+      case (Num(x), LESS_EQUAL, Num(y)) => Bool(x <= y)
+      case (l, BANG_EQUAL, r) => Bool(l != r)
+      case (l, EQUAL_EQUAL, r) => Bool(l == r)
+      case (Num(x), MINUS, Num(y)) => Num(x - y)
+      case (Num(x), PLUS, Num(y)) => Num(x + y)
+      case (Num(x), SLASH, Num(y)) => Num(x / y)
+      case (Num(x), STAR, Num(y)) => Num(x * y)
+      case (Str(x), PLUS, Str(y)) => Str(x + y)
+      case _ => throw new RuntimeError(expr.operator, "Operands must be two numbers or two strings.")
 
-  override def visit(expr: GroupingExpr): Any =
+
+  override def visit(expr: GroupingExpr): Value =
     evaluate(expr.expression)
 
-  override def visit(expr: LiteralExpr): Any =
+  override def visit(expr: LiteralExpr): Value =
     expr.value
 
-  override def visit(expr: UnaryExpr): Any =
+  override def visit(expr: UnaryExpr): Value =
     val right = evaluate(expr.right)
     expr.operator.tokenType match
       case MINUS =>
         checkNumberOperand(expr.operator, right)
-        -num(right)
-      case BANG => !isTruthy(right)
-      case _ => null
+        Num(-num(right))
+      case BANG => Bool(!right.isTruthy)
+      case _ => Nil
 
-  override def visit(expr: VariableExpr): Any =
+  override def visit(expr: VariableExpr): Value =
     environment.get(expr.name)
 
   override def visit(stmt: VarStmt): Unit =
@@ -135,7 +104,7 @@ class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit] :
       null
     environment.define(stmt.name.lexeme, value)
 
-  override def visit(expr: AssignExpr): Any =
+  override def visit(expr: AssignExpr): Value =
     val value = evaluate(expr.value)
     environment.assign(expr.name, value)
     value
@@ -144,26 +113,26 @@ class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit] :
     executeBlock(stmt.statements, Environment(Some(environment)))
 
   override def visit(stmt: IfStmt): Unit =
-    if isTruthy(evaluate(stmt.condition)) then
+    if evaluate(stmt.condition).isTruthy then
       execute(stmt.thenBranch)
     else if stmt.elseBranch != null then
       execute(stmt.elseBranch)
 
-  override def visit(expr: LogicalExpr): Any =
+  override def visit(expr: LogicalExpr): Value =
     val left = evaluate(expr.left)
     if expr.operator.tokenType == TokenType.OR then
-      if isTruthy(left) then return left
+      if left.isTruthy then return left
     else
-        if !isTruthy(left) then return left
+      if !left.isTruthy then return left
     evaluate(expr.right)
 
   override def visit(stmt: WhileStmt): Unit =
-    while isTruthy(evaluate(stmt.condition)) do
+    while evaluate(stmt.condition).isTruthy do
       execute(stmt.body)
 
-  override def visit(expr: CallExpr): Any =
+  override def visit(expr: CallExpr): Value =
     val callee = evaluate(expr.callee)
-    var arguments = mutable.ArrayBuffer.empty[Any]
+    var arguments = mutable.ArrayBuffer.empty[Value]
     for argument <- expr.arguments do
       arguments.addOne(evaluate(argument))
     if !callee.isInstanceOf[LoxCallable] then
@@ -171,7 +140,7 @@ class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit] :
     val function = callee.asInstanceOf[LoxCallable]
     if arguments.size != function.arity() then
       throw new RuntimeError(expr.paren, s"Expected ${function.arity()} arguments but got ${arguments.size}.")
-    function.call(this, arguments.toList)
+    function.call(this, arguments.toSeq)
 
   override def visit(stmt: FunctionStmt): Unit =
     val function = LoxFunction(stmt, environment)
@@ -181,7 +150,7 @@ class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit] :
     var value = if stmt.value != null then evaluate(stmt.value) else null
     throw new Return(value)
 
-  def executeBlock(statements: List[Stmt], environment: Environment): Unit =
+  def executeBlock(statements: Seq[Stmt], environment: Environment): Unit =
     val previous = this.environment
     try
       this.environment = environment
