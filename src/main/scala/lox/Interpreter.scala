@@ -19,28 +19,6 @@ class Interpreter extends LoxEvaluator, ExprVisitor[Value], StmtVisitor[Unit] :
 
   private var environment = globals
 
-//  def isTruthy(obj: Any): Boolean = obj match
-//    case null => false
-//    case b: Boolean => b
-//    case _ => true
-
-//  def isEqual(a: Any, b: Any): Boolean = (a, b) match
-//    case (null, null) => true
-//    case (null, _) => false
-//    case (a, b) => a equals b
-
-  def num(obj: Any): Double = obj match
-    case d: Double => d
-    case x => x.toString.toDouble
-
-  def checkNumberOperand(operator: Token, operand: Any): Unit = operand match
-    case o: Double => ()
-    case _ => throw new RuntimeError(operator, "Operand must be a number")
-
-  def checkNumberOperands(operator: Token, left: Any, right: Any): Unit = (left, right) match
-    case (l: Double, r: Double) => ()
-    case _ => throw new RuntimeError(operator, "Operands must be numbers")
-
   def evaluate(expr: Expr): Value =
     expr.accept(this)
 
@@ -78,7 +56,6 @@ class Interpreter extends LoxEvaluator, ExprVisitor[Value], StmtVisitor[Unit] :
       case (Str(x), PLUS, Str(y)) => Str(x + y)
       case _ => throw new RuntimeError(expr.operator, "Operands must be two numbers or two strings.")
 
-
   override def visit(expr: GroupingExpr): Value =
     evaluate(expr.expression)
 
@@ -86,12 +63,10 @@ class Interpreter extends LoxEvaluator, ExprVisitor[Value], StmtVisitor[Unit] :
     expr.value
 
   override def visit(expr: UnaryExpr): Value =
-    val right = evaluate(expr.right)
-    expr.operator.tokenType match
-      case MINUS =>
-        checkNumberOperand(expr.operator, right)
-        Num(-num(right))
-      case BANG => Bool(!right.isTruthy)
+    (expr.operator.tokenType, evaluate(expr.right)) match
+      case (MINUS, Num(x)) => Num(-x)
+      case (MINUS, _) => throw RuntimeError(expr.operator, "Operand must be a number.")
+      case (BANG, x) => Bool(!x.isTruthy)
       case _ => Nil
 
   override def visit(expr: VariableExpr): Value =
