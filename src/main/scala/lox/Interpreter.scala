@@ -2,20 +2,19 @@ package lox
 
 import scala.collection.mutable
 
+object ClockFn extends LoxCallable:
+  override def arity(): Int = 0
+
+  override def call(interpreter: Interpreter, arguments: Seq[Value]): Value =
+    Num(System.currentTimeMillis().toDouble)
+
+  override def toString(): String = "<native fn>"
+
 class Interpreter extends ExprVisitor[Value], StmtVisitor[Unit] :
   import TokenType.*
 
   val globals = Environment()
-
-  private val clockFn = new LoxCallable:
-    override def arity(): Int = 0
-
-    override def call(interpreter: Interpreter, arguments: Seq[Value]): Value =
-      Num(System.currentTimeMillis().toDouble)
-
-    override def toString(): String = "<native fn>"
-
-  globals.define("clock", clockFn)
+  globals.define("clock", ClockFn)
 
   private var environment = globals
 
