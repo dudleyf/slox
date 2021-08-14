@@ -2,7 +2,7 @@ package lox
 
 import scala.collection.mutable
 
-class Interpreter extends LoxEvaluator, ExprVisitor[Value], StmtVisitor[Unit] :
+class Interpreter extends ExprVisitor[Value], StmtVisitor[Unit] :
   import TokenType.*
 
   val globals = Environment()
@@ -10,7 +10,7 @@ class Interpreter extends LoxEvaluator, ExprVisitor[Value], StmtVisitor[Unit] :
   private val clockFn = new LoxCallable:
     override def arity(): Int = 0
 
-    override def call(interpreter: LoxEvaluator, arguments: Seq[Value]): Value =
+    override def call(interpreter: Interpreter, arguments: Seq[Value]): Value =
       Num(System.currentTimeMillis().toDouble)
 
     override def toString(): String = "<native fn>"

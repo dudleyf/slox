@@ -30,7 +30,7 @@ case class Str(val value: String) extends Value:
 
 trait LoxCallable extends Value:
   def arity(): Int
-  def call(interpreter: LoxEvaluator, arguments: Seq[Value]): Value
+  def call(interpreter: Interpreter, arguments: Seq[Value]): Value
 
   override def toString: String = "<callable>"
 
@@ -38,7 +38,7 @@ class LoxFunction(private val declaration: FunctionStmt,
                   private val closure: Environment) extends LoxCallable:
   override def arity(): Int = declaration.params.size
 
-  override def call(interpreter: LoxEvaluator, arguments: Seq[Value]): Value =
+  override def call(interpreter: Interpreter, arguments: Seq[Value]): Value =
     val environment = Environment(Some(closure))
     for ((param, arg) <- declaration.params.zip(arguments)) do
       environment.define(param.lexeme, arg)
