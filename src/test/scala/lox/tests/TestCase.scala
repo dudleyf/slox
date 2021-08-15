@@ -10,21 +10,15 @@ import scala.Console.in
 import scala.collection.mutable.ListBuffer
 
 trait TestHelpers {
-  def scan(source: String): List[Token] =
-    val scanner = Scanner(source)
-    scanner.scanTokens()
+  def scan(source: String): Seq[Token] = Lox().scan(source)
 
-  def parse(source: String): List[Stmt] =
-    val tokens = scan(source)
-    val parser = Parser(tokens)
-    parser.parse()
+  def parse(source: String): Seq[Stmt] = Lox().parse(source)
 
   def execute(source: String): String =
-    val stmts = parse(source)
-    val interpreter = Interpreter()
+    val interpreter = Lox()
     val stdOut = ByteArrayOutputStream()
     Console.withOut(stdOut) {
-      interpreter.interpret(stmts)
+      interpreter.run(source)
     }
     stdOut.toString()
 }
