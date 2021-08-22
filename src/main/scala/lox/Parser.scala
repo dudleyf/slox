@@ -205,7 +205,7 @@ class Parser(val tokens: List[Token]):
     val condition = expression()
     consume(RIGHT_PAREN, "Expect ')' after if condition.")
     val thenBranch = statement()
-    val elseBranch = if matchTokens(ELSE) then statement() else null
+    val elseBranch = if matchTokens(ELSE) then Some(statement()) else None
     IfStmt(condition, thenBranch, elseBranch)
 
   def printStatement(): Stmt =

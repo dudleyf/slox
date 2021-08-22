@@ -32,15 +32,11 @@ class Interpreter:
       environment.define(token.lexeme, value)
     case BlockStmt(stmts) => executeBlock(stmts, Environment(Some(environment)))
     case IfStmt(cond, thenBranch, elseBranch) =>
-      if evaluate(cond).isTruthy then
-        execute(thenBranch)
-      else if elseBranch != null then
-        execute(elseBranch)
+      if evaluate(cond).isTruthy then execute(thenBranch) else elseBranch.foreach(execute)
     case WhileStmt(cond, body) => while evaluate(cond).isTruthy do execute(body)
     case f @ FunctionStmt(token, _, _) =>
       environment.define(token.lexeme, LoxFunction(f, environment))
     case ReturnStmt(_, value) => throw Return(evaluate(value))
-
 
   def evaluate(expr: Expr): Value = expr match
     case BinaryExpr(left, op, right) => (evaluate(left), op.tokenType, evaluate(right)) match

@@ -19,7 +19,7 @@ case class PrintStmt(expression: Expr) extends Stmt
 case class ExpressionStmt(expression: Expr) extends Stmt
 case class VarStmt(name: Token, initializer: Expr) extends Stmt
 case class BlockStmt(statements: List[Stmt]) extends Stmt
-case class IfStmt(condition: Expr, thenBranch: Stmt, elseBranch: Stmt) extends Stmt
+case class IfStmt(condition: Expr, thenBranch: Stmt, elseBranch: Option[Stmt]) extends Stmt
 case class WhileStmt(condition: Expr, body: Stmt) extends Stmt
 case class FunctionStmt(name: Token, params: List[Token], body: List[Stmt]) extends Stmt
 case class ReturnStmt(keyword: Token, value: Expr) extends Stmt
