@@ -162,3 +162,18 @@ class InterpreterTests extends TestCase :
     val expected = "1\n2\n"
     execute(source) shouldBe expected
   }
+
+  test("closure") {
+    val source =
+      """var a = "global";
+        |{
+        |  fun showA() {
+        |    print a;
+        |  }
+        |
+        |  showA();
+        |  var a = "block";
+        |  showA();
+        |}""".stripMargin
+    val expected = "global\nglobal\n"
+  }

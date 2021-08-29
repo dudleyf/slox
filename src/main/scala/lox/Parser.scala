@@ -182,7 +182,7 @@ class Parser(val tokens: List[Token]):
     else
       expressionStatement()
 
-    var condition = if !check(SEMICOLON) then expression() else null
+    var condition = if !check(SEMICOLON) then expression() else LiteralExpr(Bool(true))
     consume(SEMICOLON, "Expect ';' after loop condition.")
 
     var increment = if !check(RIGHT_PAREN) then expression() else null
@@ -190,14 +190,12 @@ class Parser(val tokens: List[Token]):
 
     var body = statement()
     if increment != null then
-      body = BlockStmt(List(body, ExpressionStmt(increment)))
+      body = BlockStmt(Seq(body, ExpressionStmt(increment)))
 
-    if condition == null then condition = LiteralExpr(Bool(true))
     body = WhileStmt(condition, body)
 
     if initializer != null then
-      body = BlockStmt(List(initializer, body))
-
+      body = BlockStmt(Seq(initializer, body))
     body
 
   def ifStatement(): Stmt =
@@ -252,7 +250,7 @@ class Parser(val tokens: List[Token]):
 
   def varDeclaration(): Stmt =
     val name = consume(IDENTIFIER, "Expect variable name.")
-    var initializer = if matchTokens(EQUAL) then expression() else null
+    var initializer = if matchTokens(EQUAL) then Some(expression()) else None
     consume(SEMICOLON, "Expect ';' after variable declaration.")
     VarStmt(name, initializer)
 

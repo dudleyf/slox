@@ -33,6 +33,7 @@ class Lox:
   import Lox._
 
   val interpreter = Interpreter()
+  val resolver = Resolver(interpreter)
 
   def scan(source: String): List[Token] =
     val scanner = Scanner(source)
@@ -55,12 +56,16 @@ class Lox:
     catch
       case e: RuntimeError => Lox.runtimeError(e)
 
-  def executeBlock(statements: Seq[Stmt], environment: Environment): Unit =
+  def executeBlock(statements: Seq[Stmt], environment: Env): Unit =
     interpreter.executeBlock(statements, environment)
 
   def run(source: String): Unit =
     val stmts = parse(source)
-    if hadError then () else execute(stmts)
+    if hadError then
+      ()
+    else
+      resolver.resolve(stmts)
+      execute(stmts)
 
   def runPrompt() =
     var line = ""

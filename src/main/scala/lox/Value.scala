@@ -35,11 +35,11 @@ trait LoxCallable extends Value:
   override def toString: String = "<callable>"
 
 class LoxFunction(private val declaration: FunctionStmt,
-                  private val closure: Environment) extends LoxCallable:
+                  private val closure: Env) extends LoxCallable:
   override def arity(): Int = declaration.params.size
 
   override def call(interpreter: Interpreter, arguments: Seq[Value]): Value =
-    val environment = Environment(Some(closure))
+    val environment = Env(Some(closure))
     for ((param, arg) <- declaration.params.zip(arguments)) do
       environment.define(param.lexeme, arg)
     try

@@ -13,10 +13,11 @@ object ClockFn extends LoxCallable:
 class Interpreter:
   import TokenType.*
 
-  val globals = Environment()
+  val globals = Env()
   globals.define("clock", ClockFn)
 
   private var environment = globals
+  private val locals = mutable.Map.empty[Expr, Int]
 
   def execute(stmts: Seq[Stmt]): Unit =
     try
@@ -27,10 +28,9 @@ class Interpreter:
   def execute(stmt: Stmt): Unit = stmt match
     case PrintStmt(expr) => println(evaluate(expr).toString)
     case ExpressionStmt(expr) => evaluate(expr)
-    case VarStmt(token, init) =>
-      val value = if init != null then evaluate(init) else null
-      environment.define(token.lexeme, value)
-    case BlockStmt(stmts) => executeBlock(stmts, Environment(Some(environment)))
+    case VarStmt(token, None) => environment.define(token.lexeme, Nil)
+    case VarStmt(token, Some(init)) => environment.define(token.lexeme, evaluate(init))
+    case BlockStmt(stmts) => executeBlock(stmts, Env(Some(environment)))
     case IfStmt(cond, thenBranch, elseBranch) =>
       if evaluate(cond).isTruthy then execute(thenBranch) else elseBranch.foreach(execute)
     case WhileStmt(cond, body) => while evaluate(cond).isTruthy do execute(body)
@@ -59,10 +59,12 @@ class Interpreter:
       case (MINUS, _) => throw RuntimeError(op, "Operand must be a number.")
       case (BANG, x) => Bool(!x.isTruthy)
       case _ => Nil
-    case VariableExpr(token) => environment.get(token)
+    case VariableExpr(name) => lookupVariable(name, expr)
     case AssignExpr(token, valueExpr) =>
       val value = evaluate(valueExpr)
-      environment.assign(token, value)
+      locals.get(expr) match
+        case None => globals.assign(token, value)
+        case Some(d) => environment.assignAt(d, token, value)
       value
     case LogicalExpr(leftExpr, op, rightExpr) => (evaluate(leftExpr), op.tokenType, rightExpr) match
       case (left, OR, right) =>
@@ -79,10 +81,17 @@ class Interpreter:
           fn.call(this, argVals.toSeq)
         case _ => throw new RuntimeError(paren, "Can only call functions and classes.")
 
-  def executeBlock(statements: Seq[Stmt], environment: Environment): Unit =
+  def executeBlock(statements: Seq[Stmt], environment: Env): Unit =
     val previous = this.environment
     try
       this.environment = environment
       statements.foreach(execute)
     finally
       this.environment = previous
+
+  def resolve(expr: Expr, depth: Int) =
+    locals(expr) = depth
+
+  def lookupVariable(name: Token, expr: Expr): Value = locals.get(expr) match
+    case None => globals.get(name)
+    case Some(depth) => environment.getAt(depth, name.lexeme)
