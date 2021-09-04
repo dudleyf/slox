@@ -4,14 +4,12 @@ import java.nio.charset.StandardCharsets.UTF_8
 import java.nio.file.{Files, Path}
 import scala.io.StdIn.readLine
 
-object Lox {
+object Lox:
   val ERROR_EXIT = 65
   val RUNTIME_ERROR_EXIT = 70
 
   var hadError = false
   var hadRuntimeError = false
-
-  val interpreter = Interpreter()
 
   def error(line: Int, message: String) =
     report(line, "", message)
@@ -31,11 +29,43 @@ object Lox {
     System.err.println(s"[line ${line}] Error${where}: ${message}")
     hadError = true
 
-  def runFile(path: String) =
-    var source = Files.readString(Path.of(path), UTF_8)
-    run(source)
-    if hadError then System.exit(ERROR_EXIT)
-    if hadRuntimeError then System.exit(RUNTIME_ERROR_EXIT)
+class Lox:
+  import Lox._
+
+  val interpreter = Interpreter()
+  val resolver = Resolver(interpreter)
+
+  def scan(source: String): List[Token] =
+    val scanner = Scanner(source)
+    scanner.scanTokens()
+
+  def parse(source: String): Seq[Stmt] =
+    val tokens = scan(source)
+    val parser = Parser(tokens)
+    parser.parse()
+
+  def evaluate(expr: Expr): Value =
+    interpreter.evaluate(expr)
+
+  def execute(stmt: Stmt): Unit =
+    interpreter.execute(stmt)
+
+  def execute(stmts: Seq[Stmt]): Unit =
+    try
+      for stmt <- stmts do execute(stmt)
+    catch
+      case e: RuntimeError => Lox.runtimeError(e)
+
+  def executeBlock(statements: Seq[Stmt], environment: Env): Unit =
+    interpreter.executeBlock(statements, environment)
+
+  def run(source: String): Unit =
+    val stmts = parse(source)
+    if hadError then
+      ()
+    else
+      resolver.resolve(stmts)
+      execute(stmts)
 
   def runPrompt() =
     var line = ""
@@ -45,10 +75,8 @@ object Lox {
       hadError = false
     }
 
-  def run(source: String): Unit =
-    val scanner = Scanner(source)
-    val tokens = scanner.scanTokens()
-    val parser = Parser(tokens)
-    val stmts = parser.parse()
-    if hadError then () else interpreter.interpret(stmts)
-}
+  def runFile(path: String) =
+    var source = Files.readString(Path.of(path), UTF_8)
+    run(source)
+    if hadError then System.exit(ERROR_EXIT)
+    if hadRuntimeError then System.exit(RUNTIME_ERROR_EXIT)

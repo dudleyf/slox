@@ -145,10 +145,11 @@ class Parser(val tokens: List[Token]):
     CallExpr(callee, paren, arguments.toList)
 
   def primary(): Expr =
-    if matchTokens(FALSE) then LiteralExpr(false)
-    else if matchTokens(TRUE) then LiteralExpr(true)
-    else if matchTokens(NIL) then LiteralExpr(null)
-    else if matchTokens(NUMBER, STRING) then LiteralExpr(previous().literal)
+    if matchTokens(FALSE) then LiteralExpr(Bool(false))
+    else if matchTokens(TRUE) then LiteralExpr(Bool(true))
+    else if matchTokens(NIL) then LiteralExpr(Nil)
+    else if matchTokens(NUMBER) then LiteralExpr(Num(previous().literal.asInstanceOf[Double]))
+    else if matchTokens(STRING) then LiteralExpr(Str(previous().literal.asInstanceOf[String]))
     else if matchTokens(IDENTIFIER) then VariableExpr(previous())
     else if (matchTokens(LEFT_PAREN)) {
       val expr = expression()
@@ -181,7 +182,7 @@ class Parser(val tokens: List[Token]):
     else
       expressionStatement()
 
-    var condition = if !check(SEMICOLON) then expression() else null
+    var condition = if !check(SEMICOLON) then expression() else LiteralExpr(Bool(true))
     consume(SEMICOLON, "Expect ';' after loop condition.")
 
     var increment = if !check(RIGHT_PAREN) then expression() else null
@@ -189,14 +190,12 @@ class Parser(val tokens: List[Token]):
 
     var body = statement()
     if increment != null then
-      body = BlockStmt(List(body, ExpressionStmt(increment)))
+      body = BlockStmt(Seq(body, ExpressionStmt(increment)))
 
-    if condition == null then condition = LiteralExpr(true)
     body = WhileStmt(condition, body)
 
     if initializer != null then
-      body = BlockStmt(List(initializer, body))
-
+      body = BlockStmt(Seq(initializer, body))
     body
 
   def ifStatement(): Stmt =
@@ -204,7 +203,7 @@ class Parser(val tokens: List[Token]):
     val condition = expression()
     consume(RIGHT_PAREN, "Expect ')' after if condition.")
     val thenBranch = statement()
-    val elseBranch = if matchTokens(ELSE) then statement() else null
+    val elseBranch = if matchTokens(ELSE) then Some(statement()) else None
     IfStmt(condition, thenBranch, elseBranch)
 
   def printStatement(): Stmt =
@@ -251,7 +250,7 @@ class Parser(val tokens: List[Token]):
 
   def varDeclaration(): Stmt =
     val name = consume(IDENTIFIER, "Expect variable name.")
-    var initializer = if matchTokens(EQUAL) then expression() else null
+    var initializer = if matchTokens(EQUAL) then Some(expression()) else None
     consume(SEMICOLON, "Expect ';' after variable declaration.")
     VarStmt(name, initializer)
 

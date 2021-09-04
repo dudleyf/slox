@@ -45,8 +45,8 @@ enum TokenType:
 
 case class Token(val tokenType: TokenType,
                  val lexeme: String,
-                 val literal: Any,
-                 val line: Int):
+                 val literal: Any = null,
+                 val line: Int = -1):
   override def toString: String = s"${tokenType} ${lexeme} ${literal}"
 
 class Scanner(val source: String,
