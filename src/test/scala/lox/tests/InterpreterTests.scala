@@ -1,24 +1,68 @@
 package lox.tests
 
-class InterpreterTests extends TestCase :
-  test("evaluates a simple arithmetic expression") {
-    execute("print 1+2;") shouldEqual ("3\n")
+import lox.Lox
+import lox.tests.TestCase
+
+class InterpreterTests extends TestCase:
+  behavior of "A Lox interpreter"
+
+  it should "evaluate a simple arithmetic expression" in {
+    run("print 1+2;") shouldEqual ("3\n")
   }
 
-  test("variable declaration") {
-    execute("var x = 1;\nprint x;") shouldEqual ("1\n")
+  it should "evaluate a variable declaration" in {
+    run("var x = 1;\nprint x;") shouldEqual ("1\n")
   }
 
-  test("variable assignment") {
-    var x = parse("var x = 1;\nx = 2;\nprint x;")
-    execute("var x = 1;\nx = 2;\nprint x;") shouldEqual ("2\n")
+  it should "evaluate a variable assignment" in {
+    run("var x = 1;\nx = 2;\nprint x;") shouldEqual ("2\n")
   }
 
-  test("scopes") {
+  it should "evaluate nested scopes with a single variable" in {
+    val src =
+      """var a = "global a";
+        |{
+        |  var a = "outer a";
+        |  {
+        |    var a = "inner a";
+        |    print a;
+        |  }
+        |  print a;
+        |}
+        |print a;""".stripMargin
+    val expect =
+      """inner a
+        |outer a
+        |global a
+        |""".stripMargin
+    run(src) shouldEqual (expect)
+  }
+
+  it should "evaluate a scope with multiple variables" in {
     val src =
       """var a = "global a";
         |var b = "global b";
-        |var c = "global c";
+        |{
+        |  var a = "outer a";
+        |  var b = "outer b";
+        |  print a;
+        |  print b;
+        |}
+        |print a;
+        |print b;""".stripMargin
+    val expect =
+      """outer a
+        |outer b
+        |global a
+        |global b
+        |""".stripMargin
+    run(src) shouldEqual (expect)
+  }
+
+  it should "evaluate nested scopes with multiple variables" in {
+    val src =
+      """var a = "global a";
+        |var b = "global b";
         |{
         |  var a = "outer a";
         |  var b = "outer b";
@@ -26,42 +70,72 @@ class InterpreterTests extends TestCase :
         |    var a = "inner a";
         |    print a;
         |    print b;
-        |    print c;
         |  }
         |  print a;
         |  print b;
-        |  print c;
         |}
         |print a;
-        |print b;
-        |print c;""".stripMargin
+        |print b;""".stripMargin
     val expect =
       """inner a
         |outer b
-        |global c
         |outer a
         |outer b
-        |global c
         |global a
         |global b
-        |global c
         |""".stripMargin
-    execute(src) shouldEqual (expect)
+    run(src) shouldEqual (expect)
   }
 
-  test("if statement") {
-    execute("if (true) { print 1; } else { print 2; }") shouldEqual ("1\n")
-    execute("if (false) { print 1; } else { print 2; }") shouldEqual ("2\n")
+//  test("scopes 3") {
+//    val src =
+//      """var a = "global a";
+//        |var b = "global b";
+//        |var c = "global c";
+//        |{
+//        |  var a = "outer a";
+//        |  var b = "outer b";
+//        |  {
+//        |    var a = "inner a";
+//        |    print a;
+//        |    print b;
+//        |    print c;
+//        |  }
+//        |  print a;
+//        |  print b;
+//        |  print c;
+//        |}
+//        |print a;
+//        |print b;
+//        |print c;""".stripMargin
+//    val expect =
+//      """inner a
+//        |outer b
+//        |global c
+//        |outer a
+//        |outer b
+//        |global c
+//        |global a
+//        |global b
+//        |global c
+//        |""".stripMargin
+//    execute(src) shouldEqual (expect)
+//  }
+//
+
+  it should "evaluate if statements" in {
+    run("if (true) { print 1; } else { print 2; }") shouldEqual ("1\n")
+    run("if (false) { print 1; } else { print 2; }") shouldEqual ("2\n")
   }
 
-  test("logical expressions") {
-    execute("print \"hi\" or 2;") shouldEqual "hi\n"
-    execute("print nil or \"yes\";") shouldEqual "yes\n"
-    execute("print \"hi\" and false;") shouldEqual "false\n"
-    execute("print \"hi\" and true;") shouldEqual "true\n"
+  it should "evaluate logical expressions" in {
+    run("print \"hi\" or 2;") shouldEqual "hi\n"
+    run("print nil or \"yes\";") shouldEqual "yes\n"
+    run("print \"hi\" and false;") shouldEqual "false\n"
+    run("print \"hi\" and true;") shouldEqual "true\n"
   }
 
-  test("while loop") {
+  it should "evaluate a while loop" in {
     val source =
       """var x = 0;
         |while (x < 3) {
@@ -73,10 +147,10 @@ class InterpreterTests extends TestCase :
         |1
         |2
         |""".stripMargin
-    execute(source) shouldEqual expected
+    run(source) shouldEqual expected
   }
 
-  test("for loop") {
+  it should "evaluate a for loop" in {
     val source =
       """for (var x = 0; x < 3; x = x + 1) {
         |  print x;
@@ -86,16 +160,16 @@ class InterpreterTests extends TestCase :
         |1
         |2
         |""".stripMargin
-    execute(source) shouldEqual expected
+    run(source) shouldEqual expected
   }
 
-  test("clock() function") {
+  it should "clock() function should return a number" in  {
     val source = "print clock();"
-    val result = execute(source);
+    val result = run(source);
     result.toDoubleOption shouldBe defined
   }
 
-  test("user-defined functions") {
+  it should "evaluate a user-defined function" in {
     val source =
       """fun sayHi(first, last) {
         |  print "Hi, " + first + " " + last + "!";
@@ -103,10 +177,10 @@ class InterpreterTests extends TestCase :
         |
         |sayHi("Dear", "Reader");""".stripMargin
     val expected = "Hi, Dear Reader!\n"
-    execute(source) shouldBe expected
+    run(source) shouldBe expected
   }
 
-  test("return") {
+  it should "evaluate a return statement" in {
     val source =
       """fun foo() {
         |  return 1;
@@ -115,10 +189,10 @@ class InterpreterTests extends TestCase :
         |print x;
         |""".stripMargin
     val expected = "1\n"
-    execute(source) shouldBe expected
+    run(source) shouldBe expected
   }
 
-  test("fib") {
+  it should "evaluate fib" in {
     val source =
       """fun fib(n) {
         |  if (n <= 1) return n;
@@ -140,10 +214,10 @@ class InterpreterTests extends TestCase :
         |21
         |34
         |""".stripMargin
-    execute(source) shouldBe expected
+    run(source) shouldBe expected
   }
 
-  test("local functions") {
+  it should "evaluate local functions" in {
     val source =
       """fun makeCounter() {
         |      var i = 0;
@@ -160,10 +234,10 @@ class InterpreterTests extends TestCase :
         |    counter(); // "2".
         |""".stripMargin
     val expected = "1\n2\n"
-    execute(source) shouldBe expected
+    run(source) shouldBe expected
   }
 
-  test("closure") {
+  it should "evaluate a closure" in {
     val source =
       """var a = "global";
         |{
@@ -176,4 +250,52 @@ class InterpreterTests extends TestCase :
         |  showA();
         |}""".stripMargin
     val expected = "global\nglobal\n"
+    run(source) shouldEqual expected
+  }
+
+  it should "evaluate both a while and for loop" in {
+    val source =
+      """{
+        |  var x = 0;
+        |  while (x < 3) {
+        |      {print x;}
+        |      x = x + 1;
+        |  }
+        |
+        |  for (var x = 0; x < 3; x = x + 1) {
+        |    print x;
+        |  }
+        |}""".stripMargin
+    val expected =
+      """0
+        |1
+        |2
+        |0
+        |1
+        |2
+        |""".stripMargin
+    run(source) shouldEqual expected
+  }
+
+  it should "desugar a for loop into an equivalent while loop" in {
+    val whileSource =
+      """{
+        |  var x = 0;
+        |  while (x < 3) {
+        |      {print x;}
+        |      x = x + 1;
+        |  }
+        |}""".stripMargin
+
+    val forSource =
+      """for (var x = 0; x < 3; x = x + 1) {
+        |  print x;
+        |}
+        |""".stripMargin
+
+    val lox = Lox()
+    val whileAst = lox.parse(whileSource)
+    val forAst = lox.parse(forSource)
+
+    whileAst.toString() should equal (forAst.toString())
   }

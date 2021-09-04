@@ -16,8 +16,8 @@ class Interpreter:
   val globals = Env()
   globals.define("clock", ClockFn)
 
-  private var environment = globals
-  private val locals = mutable.Map.empty[Expr, Int]
+  var environment = globals
+  val locals = mutable.Map.empty[Expr, Int]
 
   def execute(stmts: Seq[Stmt]): Unit =
     try
@@ -64,7 +64,7 @@ class Interpreter:
       val value = evaluate(valueExpr)
       locals.get(expr) match
         case None => globals.assign(token, value)
-        case Some(d) => environment.assignAt(d, token, value)
+        case Some(distance) => environment.assignAt(distance, token, value)
       value
     case LogicalExpr(leftExpr, op, rightExpr) => (evaluate(leftExpr), op.tokenType, rightExpr) match
       case (left, OR, right) =>

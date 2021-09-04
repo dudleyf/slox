@@ -3,24 +3,21 @@ package lox
 import scala.collection.mutable
 
 class Resolver(val interpreter: Interpreter):
-  private enum LoxFunctionType:
+  enum LoxFunctionType:
     case None, Function
 
   val scopes = mutable.Stack.empty[mutable.Map[String, Boolean]]
-  private var currentFunctionType = LoxFunctionType.None
+  var currentFunctionType = LoxFunctionType.None
 
   def resolve(stmts: Seq[Stmt]): Unit =
-    stmts.foreach(resolve)
+    for stmt <- stmts do
+      resolve(stmt)
 
   def resolve(stmt: Stmt): Unit = stmt match
     case BlockStmt(stmts) =>
       beginScope()
       resolve(stmts)
       endScope()
-    case VarStmt(name, init) =>
-      declare(name)
-      init.foreach(resolve)
-      define(name)
     case f @ FunctionStmt(name, _, _) =>
       declare(name)
       define(name)
@@ -35,17 +32,16 @@ class Resolver(val interpreter: Interpreter):
       currentFunctionType match
         case LoxFunctionType.None => Lox.error(keyword, "Can't return from top-level code.")
         case _ => ()
-      resolve(expr)
+      if expr != null then resolve(expr)
+    case VarStmt(name, init) =>
+      declare(name)
+      init.foreach(resolve)
+      define(name)
     case WhileStmt(condition, body) =>
       resolve(condition)
       resolve(body)
 
   def resolve(expr: Expr): Unit = expr match
-    case VariableExpr(name) =>
-      if scopes.nonEmpty then scopes.top.get(name.lexeme) match
-        case Some(false) => Lox.error(name, "Can't read local variable in its own initializer.")
-        case _ => ()
-      resolveLocal(expr.asInstanceOf[Expr], name)
     case AssignExpr(name, right) =>
       resolve(right)
       resolveLocal(expr, name)
@@ -61,9 +57,13 @@ class Resolver(val interpreter: Interpreter):
     case GroupingExpr(expr) => resolve(expr)
     case LiteralExpr(_) => ()
     case UnaryExpr(_, right) => resolve(right)
+    case VariableExpr(name) =>
+      if scopes.nonEmpty then scopes.top.get(name.lexeme) match
+        case Some(false) => Lox.error(name, "Can't read local variable in its own initializer.")
+        case _ => resolveLocal(expr, name)
 
   private def beginScope(): Unit =
-    scopes.push(mutable.Map.empty)
+    scopes.push(mutable.Map())
 
   private def endScope(): Unit =
     scopes.pop()
@@ -76,24 +76,22 @@ class Resolver(val interpreter: Interpreter):
     else
       scopes.top(name.lexeme) = false
 
-  private def define(name: Token): Unit =
+  def define(name: Token): Unit =
     if scopes.isEmpty then ()
     else scopes.top(name.lexeme) = true
 
-//  private def resolveLocal(expr: Expr, name: Token): Unit =
-//    for (scope, i) <- scopes.zipWithIndex do
-//      if scope.contains(name.lexeme) then interpreter.resolve(expr, i)
-
-  private def resolveLocal(expr: Expr, name: Token): Unit = {
-    for (i <- scopes.size - 1 to 0 by -1) {
-      if (scopes(i).contains(name.lexeme)) {
+//  def resolveLocal(expr: Expr, name: Token): Unit =
+//    for i <- 0 until scopes.length do
+//      if scopes(i).contains(name.lexeme) then
+//        interpreter.resolve(expr, i)
+//        return
+  def resolveLocal(expr: Expr, name: Token): Unit =
+    for i <- scopes.indices.reverse do
+      if scopes(i).contains(name.lexeme) then
         interpreter.resolve(expr, scopes.size - 1 - i)
         return
-      }
-    }
-  }
 
-  private def resolveFunction(fn: FunctionStmt, fnType: LoxFunctionType): Unit =
+  def resolveFunction(fn: FunctionStmt, fnType: LoxFunctionType): Unit =
     val enclosingFunctionType = currentFunctionType
     currentFunctionType = fnType
     beginScope()
